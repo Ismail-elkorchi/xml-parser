@@ -27,9 +27,11 @@ All evaluation artifacts are written under `reports/`.
 - `serializer-determinism.json`
   - `suite`, `timestamp`, `ok`, `deterministic`, `roundtripOk`
 - `security-adversarial.json`
-  - `suite`, `timestamp`, `ok`, `corpus`, `fuzz`
+  - `suite`, `timestamp`, `ok`, `limits`, `checks`, `corpus`, `fuzz`
+  - `limits`: `minFuzzRuns`, `maxCrashCount`, `minUniqueParseErrorIds`
+  - `checks`: `corpusFailures`, `fuzzRunCount`, `crashCount`, `parseErrorCoverage`
   - `corpus`: `total`, `pass`, `fail`, `failures[]`
-  - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `parseErrorFrequency`
+  - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `uniqueParseErrorIds`, `parseErrorFrequency`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `performance-complexity.json`

@@ -98,7 +98,7 @@ function generateFuzzCase(rand, index) {
 }
 
 const fuzzSeed = 20260224;
-const fuzzRuns = 300;
+const fuzzRuns = 500;
 const fuzzRand = createRng(fuzzSeed);
 const fuzzOutcomes = {
   total: fuzzRuns,
@@ -146,12 +146,28 @@ fuzzOutcomes.topSlowest = fuzzOutcomes.topSlowest.slice(0, 10);
 
 const corpusResults = corpusCases.map((entry) => runCorpusCase(entry));
 const corpusFailures = corpusResults.filter((entry) => !entry.ok);
+const uniqueParseErrorIds = parseErrorFrequency.size;
 
-const ok = corpusFailures.length === 0 && fuzzOutcomes.crashCount === 0;
+const limits = {
+  minFuzzRuns: 500,
+  maxCrashCount: 0,
+  minUniqueParseErrorIds: 5
+};
+
+const checks = {
+  corpusFailures: corpusFailures.length === 0,
+  fuzzRunCount: fuzzOutcomes.total >= limits.minFuzzRuns,
+  crashCount: fuzzOutcomes.crashCount <= limits.maxCrashCount,
+  parseErrorCoverage: uniqueParseErrorIds >= limits.minUniqueParseErrorIds
+};
+
+const ok = Object.values(checks).every((entry) => entry === true);
 const report = {
   suite: "security-adversarial",
   timestamp: new Date().toISOString(),
   ok,
+  limits,
+  checks,
   corpus: {
     total: corpusCases.length,
     pass: corpusResults.length - corpusFailures.length,
@@ -161,6 +177,7 @@ const report = {
   fuzz: {
     seed: fuzzSeed,
     ...fuzzOutcomes,
+    uniqueParseErrorIds,
     parseErrorFrequency: Object.fromEntries([...parseErrorFrequency.entries()].sort((a, b) => b[1] - a[1]))
   }
 };
