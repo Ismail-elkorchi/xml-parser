@@ -6,10 +6,8 @@
 - Resource exhaustion via input size/depth/node count/time (CWE-400)
 
 ## Security defaults
-- DTD declarations are rejected unless `allowDtd=true`.
-- External entity declarations are rejected unless both:
-  - `allowDtd=true`
-  - `allowExternalEntities=true`
+- DTD declarations are always rejected.
+- External entity declarations are always rejected.
 - Runtime budgets are enforced for:
   - `maxInputBytes`
   - `maxStreamBytes`
