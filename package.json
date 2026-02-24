@@ -23,6 +23,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
     "test": "npm run build && node --test test/**/*.test.mjs",
+    "smoke:node": "npm run build && node scripts/smoke/runtime-smoke.mjs",
+    "smoke:deno": "npm run build && deno run --allow-read scripts/smoke/runtime-smoke.mjs",
+    "smoke:bun": "npm run build && bun scripts/smoke/runtime-smoke.mjs",
+    "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
     "eval:ci": "node scripts/eval/run-eval.mjs --profile=ci",
     "eval:release": "node scripts/eval/run-eval.mjs --profile=release"
   },

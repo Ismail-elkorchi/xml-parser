@@ -28,3 +28,39 @@ jobs:
         run: npm test
       - name: Eval CI
         run: npm run eval:ci
+
+  deno-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install
+        run: npm ci
+      - name: Deno Runtime Smoke
+        run: npm run smoke:deno
+
+  bun-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: npm ci
+      - name: Bun Runtime Smoke
+        run: npm run smoke:bun
