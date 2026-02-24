@@ -22,6 +22,9 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 - `npm run typecheck`
 - `npm run build`
 - `npm test`
+- `npm run smoke:node`
+- `npm run smoke:deno`
+- `npm run smoke:bun`
 - `npm run eval:ci`
 - `npm run eval:release`
 
