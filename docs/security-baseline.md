@@ -4,9 +4,11 @@
 - No runtime dependencies.
 - Runtime source under `src/` must not import Node builtins.
 
-## XML policy (bootstrap)
-- DTD and external entities are disabled by default in planned parser behavior.
-- Entity expansion limits are required before release profile hardening.
+## XML policy
+- DTD and external entities are disabled by default.
+- External entity processing requires explicit opt-in flags.
+- Budget limits are mandatory for bytes, nodes, depth, errors, and parse time.
+- Budget overruns fail with structured `XmlBudgetExceededError`.
 
 ## CI security workflows
 - CodeQL on pull requests and pushes to `main`.

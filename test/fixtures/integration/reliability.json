@@ -1,0 +1,30 @@
+{
+  "fixtures": [
+    {
+      "id": "simple-root",
+      "xml": "<root><child/></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 0
+    },
+    {
+      "id": "namespace-prefix",
+      "xml": "<n:root xmlns:n=\"urn:n\"><n:x/></n:root>",
+      "expectedRoot": "n:root",
+      "expectedErrorCount": 0
+    },
+    {
+      "id": "mismatched-end-tag",
+      "xml": "<root><a></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 1,
+      "expectedReparseErrorCount": 0
+    },
+    {
+      "id": "text-outside-root",
+      "xml": "prefix<root/>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 1,
+      "expectedReparseErrorCount": 0
+    }
+  ]
+}
