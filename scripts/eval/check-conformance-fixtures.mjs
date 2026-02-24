@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-import { parseXml, parseXmlBytes, parseXmlStream, tokenizeXml, XmlBudgetExceededError } from "../../dist/mod.js";
+import { parseXml, parseXmlBytes, parseXmlStream, tokenizeXml } from "../../dist/mod.js";
 
 const fixturePath = new URL("../../test/fixtures/conformance/cases.json", import.meta.url);
 const reportPath = new URL("../../reports/conformance-fixtures.json", import.meta.url);
@@ -12,10 +12,51 @@ function sortIds(ids) {
   return [...ids].sort((a, b) => a.localeCompare(b));
 }
 
+function normalizeThrow(error) {
+  if (!error || typeof error !== "object") {
+    return {
+      parseErrorId: "unexpected-throw",
+      details: null
+    };
+  }
+
+  const parseErrorId =
+    "parseErrorId" in error && typeof error.parseErrorId === "string" ? error.parseErrorId : "unexpected-throw";
+
+  const details =
+    "details" in error && error.details && typeof error.details === "object"
+      ? {
+          budget:
+            "budget" in error.details && typeof error.details.budget === "string" ? error.details.budget : null,
+          limit: "limit" in error.details && typeof error.details.limit === "number" ? error.details.limit : null,
+          observed:
+            "observed" in error.details && typeof error.details.observed === "number" ? error.details.observed : null
+        }
+      : null;
+
+  return { parseErrorId, details };
+}
+
+async function runPath(label, execute) {
+  try {
+    const document = await execute();
+    return {
+      label,
+      kind: "ok",
+      document
+    };
+  } catch (error) {
+    return {
+      label,
+      kind: "throw",
+      throwInfo: normalizeThrow(error)
+    };
+  }
+}
+
 async function runCase(entry) {
   const xml = entry.xml;
   const options = entry.options ?? {};
-
   const expectedErrors = sortIds(entry.expectedErrorIds ?? []);
 
   const bytes = new TextEncoder().encode(xml);
@@ -28,10 +69,21 @@ async function runCase(entry) {
     }
   });
 
-  try {
-    const fromString = parseXml(xml, options);
-    const fromBytes = parseXmlBytes(bytes, options);
-    const fromStream = await parseXmlStream(stream, options);
+  const [stringPath, bytesPath, streamPath] = await Promise.all([
+    runPath("string", () => parseXml(xml, options)),
+    runPath("bytes", () => parseXmlBytes(bytes, options)),
+    runPath("stream", () => parseXmlStream(stream, options))
+  ]);
+
+  const paths = [stringPath, bytesPath, streamPath];
+  const allOk = paths.every((pathResult) => pathResult.kind === "ok");
+  const allThrow = paths.every((pathResult) => pathResult.kind === "throw");
+  const tokenDeterministic = JSON.stringify(tokenizeXml(xml, options)) === JSON.stringify(tokenizeXml(xml, options));
+
+  if (allOk) {
+    const fromString = stringPath.document;
+    const fromBytes = bytesPath.document;
+    const fromStream = streamPath.document;
 
     const ids = sortIds(fromString.errors.map((item) => item.parseErrorId));
     const root = fromString.root?.qName ?? null;
@@ -40,19 +92,15 @@ async function runCase(entry) {
       fromString.determinismHash === fromBytes.determinismHash &&
       fromString.determinismHash === fromStream.determinismHash;
 
-    const tokenDeterministic = JSON.stringify(tokenizeXml(xml, options)) === JSON.stringify(tokenizeXml(xml, options));
-
     const namespaceOk =
       entry.expectedRootNamespace === undefined ||
       (fromString.root?.namespaceURI ?? null) === entry.expectedRootNamespace;
-
-    const requireParity = ids.length === 0;
 
     const ok =
       JSON.stringify(ids) === JSON.stringify(expectedErrors) &&
       root === (entry.expectedRoot ?? null) &&
       namespaceOk &&
-      (!requireParity || deterministic) &&
+      deterministic &&
       tokenDeterministic;
 
     return {
@@ -64,21 +112,39 @@ async function runCase(entry) {
         rootNamespace: entry.expectedRootNamespace ?? null
       },
       observed: {
+        mode: "ok",
         root,
         errors: ids,
         rootNamespace: fromString.root?.namespaceURI ?? null,
-        requireParity,
         deterministic,
         tokenDeterministic
       }
     };
-  } catch (error) {
-    const isBudget = error instanceof XmlBudgetExceededError;
-    const ids = isBudget ? [error.parseErrorId] : ["unexpected-throw"];
+  }
+
+  if (allThrow) {
+    const throwInfo = paths.map((pathResult) => pathResult.throwInfo);
+    const baseline = throwInfo[0] ?? { parseErrorId: "unexpected-throw", details: null };
+
+    const throwParity = throwInfo.every(
+      (entryInfo) =>
+        entryInfo.parseErrorId === baseline.parseErrorId &&
+        JSON.stringify(entryInfo.details ?? null) === JSON.stringify(baseline.details ?? null)
+    );
+
+    const ids = sortIds([baseline.parseErrorId]);
+    const expectedBudget = entry.expectedThrowBudget ?? null;
+    const observedBudget = baseline.details?.budget ?? null;
+
+    const budgetOk =
+      expectedBudget === null ? true : baseline.parseErrorId === "budget-exceeded" && observedBudget === expectedBudget;
 
     const ok =
-      JSON.stringify(sortIds(ids)) === JSON.stringify(expectedErrors) &&
-      (entry.expectedRoot ?? null) === null;
+      throwParity &&
+      budgetOk &&
+      JSON.stringify(ids) === JSON.stringify(expectedErrors) &&
+      (entry.expectedRoot ?? null) === null &&
+      tokenDeterministic;
 
     return {
       id: entry.id,
@@ -86,17 +152,39 @@ async function runCase(entry) {
       expected: {
         root: entry.expectedRoot ?? null,
         errors: expectedErrors,
-        rootNamespace: entry.expectedRootNamespace ?? null
+        rootNamespace: entry.expectedRootNamespace ?? null,
+        throwBudget: expectedBudget
       },
       observed: {
+        mode: "throw",
         root: null,
         errors: ids,
         rootNamespace: null,
-        deterministic: true,
-        tokenDeterministic: true
+        throwParity,
+        throwInfo,
+        tokenDeterministic
       }
     };
   }
+
+  return {
+    id: entry.id,
+    ok: false,
+    expected: {
+      root: entry.expectedRoot ?? null,
+      errors: expectedErrors,
+      rootNamespace: entry.expectedRootNamespace ?? null
+    },
+    observed: {
+      mode: "mixed",
+      paths: paths.map((result) =>
+        result.kind === "ok"
+          ? { label: result.label, kind: "ok", determinismHash: result.document.determinismHash }
+          : { label: result.label, kind: "throw", throwInfo: result.throwInfo }
+      ),
+      tokenDeterministic
+    }
+  };
 }
 
 const results = [];

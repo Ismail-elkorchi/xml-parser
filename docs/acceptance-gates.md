@@ -45,4 +45,5 @@ Required reports:
 - Runtime dependencies remain empty.
 - Runtime code under `src/` does not import Node builtins.
 - DTD/external entities are default-deny.
+- Conformance determinism parity applies to normal and malformed inputs across string/bytes/stream paths.
 - Budget exhaustion must fail with structured error semantics.

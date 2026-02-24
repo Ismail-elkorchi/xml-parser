@@ -1,4 +1,3 @@
-import { decodeEntities } from "./entities.js";
 import { stableHash } from "./hash.js";
 import { createParseError, XmlBudgetExceededError } from "./parse-errors.js";
 import { tokenizeXml } from "./tokenizer.js";
@@ -11,8 +10,7 @@ import type {
   XmlParseOptions,
   XmlSpan,
   XmlTextNode,
-  XmlToken,
-  XmlTokenAttribute
+  XmlToken
 } from "./types.js";
 
 const XML_NS = "http://www.w3.org/XML/1998/namespace";
@@ -85,196 +83,6 @@ function createNamespaceRoot(): Map<string, string> {
     ["xml", XML_NS],
     ["xmlns", XMLNS_NS]
   ]);
-}
-
-function shiftSpan(span: XmlSpan, delta: number): XmlSpan {
-  return {
-    start: span.start + delta,
-    end: span.end + delta,
-    origin: span.origin
-  };
-}
-
-function shiftAttribute(attribute: XmlTokenAttribute, delta: number): XmlTokenAttribute {
-  return {
-    qName: attribute.qName,
-    value: attribute.value,
-    span: shiftSpan(attribute.span, delta)
-  };
-}
-
-function shiftToken(token: XmlToken, delta: number): XmlToken {
-  switch (token.kind) {
-    case "xml-declaration":
-      return { ...token, start: token.start + delta, end: token.end + delta };
-    case "start-tag":
-      return {
-        ...token,
-        start: token.start + delta,
-        end: token.end + delta,
-        attributes: token.attributes.map((attribute) => shiftAttribute(attribute, delta))
-      };
-    case "end-tag":
-    case "text":
-    case "comment":
-    case "cdata":
-    case "doctype":
-    case "processing-instruction":
-      return { ...token, start: token.start + delta, end: token.end + delta };
-  }
-}
-
-function shiftError(error: XmlParseError, delta: number): XmlParseError {
-  return {
-    ...error,
-    offset: error.offset + delta
-  };
-}
-
-function findMarkupEnd(buffer: string): number | null {
-  if (buffer.startsWith("<!--")) {
-    const end = buffer.indexOf("-->");
-    return end < 0 ? null : end + 3;
-  }
-
-  if (buffer.startsWith("<![CDATA[")) {
-    const end = buffer.indexOf("]]>");
-    return end < 0 ? null : end + 3;
-  }
-
-  if (buffer.startsWith("<?")) {
-    const end = buffer.indexOf("?>");
-    return end < 0 ? null : end + 2;
-  }
-
-  let quote: string | null = null;
-  for (let i = 1; i < buffer.length; i += 1) {
-    const char = buffer[i];
-    if (quote === null) {
-      if (char === '"' || char === "'") {
-        quote = char;
-        continue;
-      }
-      if (char === ">") {
-        return i + 1;
-      }
-      continue;
-    }
-
-    if (char === quote) {
-      quote = null;
-    }
-  }
-
-  return null;
-}
-
-function tokenizeXmlStreamChunks(
-  decodedChunks: string[],
-  budgets: XmlParseBudgets,
-  startTime: number
-): { tokens: XmlToken[]; errors: XmlParseError[] } {
-  const tokens: XmlToken[] = [];
-  const errors: XmlParseError[] = [];
-  let absoluteOffset = 0;
-  let buffer = "";
-  let pendingText = "";
-  let pendingTextStart = 0;
-
-  const appendText = (value: string): void => {
-    if (value.length === 0) {
-      return;
-    }
-    if (pendingText.length === 0) {
-      pendingTextStart = absoluteOffset;
-    }
-    pendingText += value;
-  };
-
-  const flushPendingText = (): void => {
-    if (pendingText.length === 0) {
-      return;
-    }
-
-    const decoded = decodeEntities(pendingText, "", pendingTextStart, errors);
-    tokens.push({
-      kind: "text",
-      value: decoded,
-      start: pendingTextStart,
-      end: pendingTextStart + pendingText.length
-    });
-    pendingText = "";
-  };
-
-  const processBuffer = (isFinal: boolean): void => {
-    while (true) {
-      assertBudget("maxTimeMs", budgets.maxTimeMs, Date.now() - startTime);
-      assertBudget("maxErrors", budgets.maxErrors, errors.length);
-
-      const bufferedBytes = asBytes(buffer) + asBytes(pendingText);
-      assertBudget("maxStreamBytes", budgets.maxStreamBytes, bufferedBytes);
-
-      if (buffer.length === 0) {
-        return;
-      }
-
-      const lt = buffer.indexOf("<");
-      if (lt < 0) {
-        appendText(buffer);
-        absoluteOffset += buffer.length;
-        buffer = "";
-        return;
-      }
-
-      if (lt > 0) {
-        appendText(buffer.slice(0, lt));
-        absoluteOffset += lt;
-        buffer = buffer.slice(lt);
-        continue;
-      }
-
-      const end = findMarkupEnd(buffer);
-      if (end === null) {
-        if (isFinal) {
-          errors.push(createParseError("malformed-tag", "Unterminated markup in stream", "", absoluteOffset));
-          appendText(buffer);
-          absoluteOffset += buffer.length;
-          buffer = "";
-          flushPendingText();
-        }
-        return;
-      }
-
-      flushPendingText();
-      const segment = buffer.slice(0, end);
-      const segmentResult = tokenizeXml(segment, {
-        maxErrors: budgets.maxErrors
-      });
-
-      for (const token of segmentResult.tokens) {
-        tokens.push(shiftToken(token, absoluteOffset));
-      }
-      for (const error of segmentResult.errors) {
-        errors.push(shiftError(error, absoluteOffset));
-      }
-
-      absoluteOffset += end;
-      buffer = buffer.slice(end);
-    }
-  };
-
-  for (const chunk of decodedChunks) {
-    if (chunk.length === 0) {
-      continue;
-    }
-    buffer += chunk;
-    processBuffer(false);
-  }
-
-  processBuffer(true);
-  flushPendingText();
-
-  return { tokens, errors };
 }
 
 function buildDocumentFromTokens(
@@ -564,11 +372,17 @@ export async function parseXmlStreamSource(
 
     consumedBytes += value.byteLength;
     assertBudget("maxInputBytes", budgets.maxInputBytes, consumedBytes);
+    assertBudget("maxStreamBytes", budgets.maxStreamBytes, consumedBytes);
     chunks.push(decoder.decode(value, { stream: true }));
   }
 
   chunks.push(decoder.decode());
 
-  const tokenized = tokenizeXmlStreamChunks(chunks, budgets, startTime);
-  return buildDocumentFromTokens(null, tokenized, options, budgets, startTime);
+  const source = chunks.join("");
+  const tokenized = tokenizeXml(source, {
+    maxErrors: budgets.maxErrors
+  });
+  const document = buildDocumentFromTokens(source, tokenized, options, budgets, startTime);
+  document.source = null;
+  return document;
 }
