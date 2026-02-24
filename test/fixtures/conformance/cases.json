@@ -14,7 +14,7 @@
     {"id":"c012-undefined-prefix-element","xml":"<n:root/>","expectedRoot":"n:root","expectedErrorIds":["namespace-prefix-undefined"]},
     {"id":"c013-undefined-prefix-attribute","xml":"<root p:id=\"1\"/>","expectedRoot":"root","expectedErrorIds":["namespace-prefix-undefined"]},
     {"id":"c014-xml-prefix-redefined","xml":"<root xmlns:xml=\"urn:wrong\"/>","expectedRoot":"root","expectedErrorIds":["namespace-prefix-redefined"]},
-    {"id":"c015-malformed-end-tag","xml":"<root></ root>","expectedRoot":"root","expectedErrorIds":[]},
+    {"id":"c015-malformed-end-tag","xml":"<root></ root>","expectedRoot":"root","expectedErrorIds":["malformed-end-tag","unclosed-tag"]},
     {"id":"c016-unexpected-end-tag","xml":"<root></missing></root>","expectedRoot":"root","expectedErrorIds":["unexpected-end-tag"]},
     {"id":"c017-mismatched-end-tag","xml":"<root><a></root>","expectedRoot":"root","expectedErrorIds":["mismatched-end-tag"]},
     {"id":"c018-unclosed-tag","xml":"<root><a/></root><b>","expectedRoot":"root","expectedErrorIds":["multiple-root-elements","unclosed-tag"]},

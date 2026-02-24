@@ -27,7 +27,7 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 - `npm run smoke:bun`
 - `npm run test:fuzz`
 - `npm run eval:ci`
-- `npm run eval:release`
+- `npm run eval:release` (requires `python3` for independent oracle check)
 - `npm run oracle:xmllint` (local-only, optional binary)
 
 ## API

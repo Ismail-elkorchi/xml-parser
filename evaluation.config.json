@@ -12,6 +12,7 @@
     "security-adversarial": "G-080",
     "serializer-determinism": "G-090",
     "integration-reliability": "G-100",
+    "oracle-independent": "G-105",
     "release-readiness": "G-110",
     "performance-complexity": "G-115"
   },
@@ -48,6 +49,7 @@
         "serializer-determinism",
         "integration-reliability",
         "performance-complexity",
+        "oracle-independent",
         "release-readiness"
       ]
     }
