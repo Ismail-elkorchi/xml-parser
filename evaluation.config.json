@@ -1,17 +1,17 @@
 {
   "gateMap": {
-    "governance-baseline": "XG-000",
-    "no-runtime-deps": "XG-010",
-    "no-node-builtins": "XG-020",
-    "scope-threat-model": "XG-030",
-    "parse-error-taxonomy": "XG-040",
-    "tokenizer-determinism": "XG-050",
-    "tree-namespace": "XG-060",
-    "stream-budgets": "XG-070",
-    "security-adversarial": "XG-080",
-    "serializer-determinism": "XG-090",
-    "integration-reliability": "XG-100",
-    "release-readiness": "XG-110"
+    "governance-baseline": "G-001",
+    "no-runtime-deps": "G-010",
+    "no-node-builtins": "G-020",
+    "scope-threat-model": "G-030",
+    "parse-error-taxonomy": "G-040",
+    "tokenizer-determinism": "G-050",
+    "tree-namespace": "G-060",
+    "stream-budgets": "G-070",
+    "security-adversarial": "G-080",
+    "serializer-determinism": "G-090",
+    "integration-reliability": "G-100",
+    "release-readiness": "G-110"
   },
   "profiles": {
     "ci": {

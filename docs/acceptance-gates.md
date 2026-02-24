@@ -3,18 +3,18 @@
 All evaluation artifacts are generated under `reports/`.
 
 ## Gate map
-- `XG-000`: governance-baseline
-- `XG-010`: no-runtime-deps
-- `XG-020`: no-node-builtins
-- `XG-030`: scope-threat-model
-- `XG-040`: parse-error-taxonomy
-- `XG-050`: tokenizer-determinism
-- `XG-060`: tree-namespace
-- `XG-070`: stream-budgets
-- `XG-080`: security-adversarial
-- `XG-090`: serializer-determinism
-- `XG-100`: integration-reliability
-- `XG-110`: release-readiness
+- `G-001`: governance-baseline
+- `G-010`: no-runtime-deps
+- `G-020`: no-node-builtins
+- `G-030`: scope-threat-model
+- `G-040`: parse-error-taxonomy
+- `G-050`: tokenizer-determinism
+- `G-060`: tree-namespace
+- `G-070`: stream-budgets
+- `G-080`: security-adversarial
+- `G-090`: serializer-determinism
+- `G-100`: integration-reliability
+- `G-110`: release-readiness
 
 ## CI profile
 Required reports:
