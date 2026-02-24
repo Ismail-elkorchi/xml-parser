@@ -34,8 +34,21 @@ const profile = profileArg ? profileArg.split("=")[1] : "ci";
 
 await cleanReports();
 
+run("npm", ["run", "build"]);
+run("node", ["scripts/eval/check-governance-baseline.mjs"]);
 run("node", ["scripts/eval/check-no-runtime-deps.mjs"]);
 run("node", ["scripts/eval/check-no-node-builtins.mjs"]);
+run("node", ["scripts/eval/check-scope-threat-model.mjs"]);
+run("node", ["scripts/eval/check-parse-error-taxonomy.mjs"]);
+run("node", ["scripts/eval/check-tokenizer-determinism.mjs"]);
+run("node", ["scripts/eval/check-tree-namespace.mjs"]);
+run("node", ["scripts/eval/check-stream-budgets.mjs"]);
+run("node", ["scripts/eval/check-security-adversarial.mjs"]);
+run("node", ["scripts/eval/check-serializer-determinism.mjs"]);
+run("node", ["scripts/eval/check-integration-reliability.mjs"]);
+if (profile === "release") {
+  run("node", ["scripts/eval/check-release-readiness.mjs"]);
+}
 run("node", ["scripts/eval/check-gates.mjs", `--profile=${profile}`]);
 
 const summary = {
@@ -43,7 +56,21 @@ const summary = {
   timestamp: new Date().toISOString(),
   profile,
   ok: true,
-  reports: ["no-runtime-deps", "no-node-builtins", "gates"]
+  reports: [
+    "governance-baseline",
+    "no-runtime-deps",
+    "no-node-builtins",
+    "scope-threat-model",
+    "parse-error-taxonomy",
+    "tokenizer-determinism",
+    "tree-namespace",
+    "stream-budgets",
+    "security-adversarial",
+    "serializer-determinism",
+    "integration-reliability",
+    ...(profile === "release" ? ["release-readiness"] : []),
+    "gates"
+  ]
 };
 await fs.writeFile(new URL("../../reports/eval-summary.json", import.meta.url), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
 console.log(`evaluation complete: profile=${profile} ok=true`);

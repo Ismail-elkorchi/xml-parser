@@ -1,29 +1,38 @@
-# Eval report format
+# Eval Report Format
 
 All evaluation artifacts are written under `reports/`.
 
-## `no-runtime-deps.json`
-- `suite`: `no-runtime-deps`
-- `timestamp`: ISO timestamp
-- `ok`: boolean
-- `dependencies`: string[]
+## Core policy reports
+- `governance-baseline.json`
+  - `suite`, `timestamp`, `ok`, `missing[]`
+- `no-runtime-deps.json`
+  - `suite`, `timestamp`, `ok`, `dependencies[]`
+- `no-node-builtins.json`
+  - `suite`, `timestamp`, `ok`, `violations[]`
+- `scope-threat-model.json`
+  - `suite`, `timestamp`, `ok`, `checks[]`
 
-## `no-node-builtins.json`
-- `suite`: `no-node-builtins`
-- `timestamp`: ISO timestamp
-- `ok`: boolean
-- `violations`: `{ file, specifier }[]`
+## Parser behavior reports
+- `parse-error-taxonomy.json`
+  - `suite`, `timestamp`, `ok`, `deterministicIds`, `ids[]`, `specRef`
+- `tokenizer-determinism.json`
+  - `suite`, `timestamp`, `ok`, `deterministic`, `tokenCount`, `hash`
+- `tree-namespace.json`
+  - `suite`, `timestamp`, `ok`, `fixtures[]`
+- `stream-budgets.json`
+  - `suite`, `timestamp`, `ok`, `parityOk`, `budgetFailureOk`, `budgetFailure`
+- `serializer-determinism.json`
+  - `suite`, `timestamp`, `ok`, `deterministic`, `roundtripOk`
+- `security-adversarial.json`
+  - `suite`, `timestamp`, `ok`, `checks[]`
+- `integration-reliability.json`
+  - `suite`, `timestamp`, `ok`, `fixtures[]`
+- `release-readiness.json` (release profile)
+  - `suite`, `timestamp`, `ok`, `packFileCount`, `missing[]`, `docsOk`
 
-## `gates.json`
-- `suite`: `gates`
-- `timestamp`: ISO timestamp
-- `profile`: `ci|release`
-- `ok`: boolean
-- `checks`: `{ gate, ok, details }[]`
-
-## `eval-summary.json`
-- `suite`: `eval-summary`
-- `timestamp`: ISO timestamp
-- `profile`: `ci|release`
-- `ok`: boolean
-- `reports`: string[]
+## Gate and summary reports
+- `gates.json`
+  - `suite`, `timestamp`, `profile`, `ok`, `checks[]`
+  - each check includes `gate`, `report`, `ok`, `details`
+- `eval-summary.json`
+  - `suite`, `timestamp`, `profile`, `ok`, `reports[]`

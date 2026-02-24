@@ -9,6 +9,7 @@ const profileArg = process.argv.find((arg) => arg.startsWith("--profile="));
 const profile = profileArg ? profileArg.split("=")[1] : "ci";
 
 const required = config.profiles?.[profile]?.requiredReports ?? [];
+const gateMap = config.gateMap ?? {};
 const checks = [];
 
 for (const name of required) {
@@ -22,7 +23,12 @@ for (const name of required) {
   } catch {
     ok = false;
   }
-  checks.push({ gate: name, ok, details });
+  checks.push({
+    gate: gateMap[name] ?? name,
+    report: name,
+    ok,
+    details
+  });
 }
 
 const overall = checks.every((check) => check.ok);

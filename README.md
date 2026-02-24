@@ -3,7 +3,7 @@
 Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 
 ## Status
-- Early bootstrap.
+- Active alpha.
 - Runtime dependencies are intentionally empty.
 - ESM-only package surface.
 
@@ -24,3 +24,22 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 - `npm test`
 - `npm run eval:ci`
 - `npm run eval:release`
+
+## API
+- `parseXml(input, options?)`
+- `parseXmlBytes(input, options?)`
+- `parseXmlStream(stream, options?)`
+- `tokenizeXml(input, options?)`
+- `serializeXml(documentOrNode)`
+- `getParseErrorSpecRef(parseErrorId)`
+
+## Security model
+- DTD and external entities are disabled by default.
+- Structured budget limits enforce bounded parsing.
+
+## Docs
+- `docs/xml-profile.md`
+- `docs/threat-model.md`
+- `docs/parse-errors.md`
+- `docs/acceptance-gates.md`
+- `docs/eval-report-format.md`

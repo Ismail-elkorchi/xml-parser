@@ -1,10 +1,49 @@
 {
+  "gateMap": {
+    "governance-baseline": "XG-000",
+    "no-runtime-deps": "XG-010",
+    "no-node-builtins": "XG-020",
+    "scope-threat-model": "XG-030",
+    "parse-error-taxonomy": "XG-040",
+    "tokenizer-determinism": "XG-050",
+    "tree-namespace": "XG-060",
+    "stream-budgets": "XG-070",
+    "security-adversarial": "XG-080",
+    "serializer-determinism": "XG-090",
+    "integration-reliability": "XG-100",
+    "release-readiness": "XG-110"
+  },
   "profiles": {
     "ci": {
-      "requiredReports": ["no-runtime-deps", "no-node-builtins"]
+      "requiredReports": [
+        "governance-baseline",
+        "no-runtime-deps",
+        "no-node-builtins",
+        "scope-threat-model",
+        "parse-error-taxonomy",
+        "tokenizer-determinism",
+        "tree-namespace",
+        "stream-budgets",
+        "security-adversarial",
+        "serializer-determinism",
+        "integration-reliability"
+      ]
     },
     "release": {
-      "requiredReports": ["no-runtime-deps", "no-node-builtins"]
+      "requiredReports": [
+        "governance-baseline",
+        "no-runtime-deps",
+        "no-node-builtins",
+        "scope-threat-model",
+        "parse-error-taxonomy",
+        "tokenizer-determinism",
+        "tree-namespace",
+        "stream-budgets",
+        "security-adversarial",
+        "serializer-determinism",
+        "integration-reliability",
+        "release-readiness"
+      ]
     }
   }
 }

@@ -1,56 +1,50 @@
-import type { XmlDocument, XmlNode, XmlParseOptions } from "./public/types.js";
+import { getParseErrorSpecRef, XmlBudgetExceededError } from "./internal/parse-errors.js";
+import { parseXmlBytesSource, parseXmlSource, parseXmlStreamSource } from "./internal/parser.js";
+import { serializeXmlDocument } from "./internal/serializer.js";
+import { tokenizeXml as tokenize } from "./internal/tokenizer.js";
+import type { XmlDocument, XmlNode, XmlParseOptions, XmlToken } from "./public/types.js";
 
-export type { XmlDocument, XmlNode, XmlParseError, XmlParseOptions } from "./public/types.js";
+export type {
+  XmlAttribute,
+  XmlBudgetExceededDetails,
+  XmlDocument,
+  XmlElementNode,
+  XmlNode,
+  XmlParseBudgets,
+  XmlParseError,
+  XmlParseOptions,
+  XmlSpan,
+  XmlTextNode,
+  XmlToken
+} from "./public/types.js";
 
-function createRoot(source: string): XmlNode {
-  return {
-    kind: "element",
-    name: "xml",
-    value: source,
-    children: []
-  };
-}
+export { XmlBudgetExceededError, getParseErrorSpecRef };
 
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {
-  void options;
-  const source = String(input ?? "");
-  return {
-    kind: "document",
-    source,
-    root: createRoot(source),
-    errors: []
-  };
+  return parseXmlSource(input, options);
 }
 
 export function parseXmlBytes(input: Uint8Array, options: XmlParseOptions = {}): XmlDocument {
-  const decoder = new TextDecoder();
-  return parseXml(decoder.decode(input), options);
+  return parseXmlBytesSource(input, options);
 }
 
 export async function parseXmlStream(
   stream: ReadableStream<Uint8Array>,
   options: XmlParseOptions = {}
 ): Promise<XmlDocument> {
-  const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
+  return parseXmlStreamSource(stream, options);
+}
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    if (value) {
-      chunks.push(value);
-    }
-  }
+export function serializeXml(input: XmlDocument | XmlNode): string {
+  return serializeXmlDocument(input);
+}
 
-  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const merged = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    merged.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  return parseXmlBytes(merged, options);
+export function tokenizeXml(input: string, options: XmlParseOptions = {}): XmlToken[] {
+  const source = String(input ?? "");
+  const tokens = tokenize(source, {
+    allowDtd: options.allowDtd === true,
+    allowExternalEntities: options.allowExternalEntities === true,
+    maxErrors: options.budgets?.maxErrors ?? 1_000
+  });
+  return tokens.tokens;
 }
