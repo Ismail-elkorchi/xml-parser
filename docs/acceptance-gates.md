@@ -11,6 +11,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-050`: tokenizer-determinism
 - `G-055`: conformance-fixtures
 - `G-058`: query-layer
+- `G-059`: schema-validation
 - `G-060`: tree-namespace
 - `G-070`: stream-budgets
 - `G-080`: security-adversarial
@@ -31,6 +32,7 @@ Required reports:
 - `reports/conformance-fixtures.json` with `ok=true`
   - category pass thresholds are strict: `core=1.0`, `namespace=1.0`, `declarations=1.0`, `malformed=1.0`, `budgets=1.0`
 - `reports/query-layer.json` with `ok=true`
+- `reports/schema-validation.json` with `ok=true`
 - `reports/tree-namespace.json` with `ok=true`
 - `reports/stream-budgets.json` with `ok=true`
 - `reports/security-adversarial.json` with `ok=true`

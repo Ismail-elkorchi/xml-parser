@@ -10,6 +10,7 @@ import {
   listElementsByQName,
   listTextNodes
 } from "./public/query.js";
+import { validateXmlProfile } from "./public/schema.js";
 import type { XmlDocument, XmlNode, XmlParseOptions, XmlToken } from "./public/types.js";
 
 export type {
@@ -25,6 +26,7 @@ export type {
   XmlTextNode,
   XmlToken
 } from "./public/types.js";
+export type { XmlValidationIssue, XmlValidationProfile, XmlValidationResult } from "./public/schema.js";
 
 export { XmlBudgetExceededError, getParseErrorSpecRef };
 export {
@@ -33,7 +35,8 @@ export {
   listElementsByAttribute,
   listElementsByNamespace,
   listElementsByQName,
-  listTextNodes
+  listTextNodes,
+  validateXmlProfile
 };
 
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {

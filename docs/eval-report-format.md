@@ -22,6 +22,8 @@ All evaluation artifacts are written under `reports/`.
   - `categories[]`: `category`, `total`, `pass`, `fail`, `passRate`, `minPassRate`, `ok`
 - `query-layer.json`
   - `suite`, `timestamp`, `ok`, `checks`, `observed`
+- `schema-validation.json`
+  - `suite`, `timestamp`, `ok`, `checks`, `profile`, `validResult`, `invalidResult`
 - `tree-namespace.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `stream-budgets.json`
