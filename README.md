@@ -44,6 +44,11 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 - `listElementsByNamespace(input, namespaceURI, localName?)`
 - `listTextNodes(input)`
 - `validateXmlProfile(input, profile)`
+- `canonicalizeXml(input)`
+- `computeCanonicalSha256(input)`
+- `verifyCanonicalSha256(input, expectedHex)`
+- `signCanonicalXml(input, privateKey, algorithm?)`
+- `verifyCanonicalXmlSignature(input, signature, publicKey, algorithm?)`
 
 `parseXmlStream` is incremental and does not retain a full source string in memory.
 For stream parses, `document.source` is `null`.
@@ -58,5 +63,6 @@ For stream parses, `document.source` is `null`.
 - `docs/parse-errors.md`
 - `docs/query-layer.md`
 - `docs/schema-validation.md`
+- `docs/canonical-signature.md`
 - `docs/acceptance-gates.md`
 - `docs/eval-report-format.md`
