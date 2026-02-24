@@ -123,6 +123,67 @@ export interface XmlParseOptions {
   budgets?: Partial<XmlParseBudgets>;
 }
 
+export type XmlReplayEvent =
+  | {
+      seq: number;
+      kind: "token";
+      tokenKind: XmlToken["kind"];
+      qName: string | null;
+      start: number;
+      end: number;
+    }
+  | {
+      seq: number;
+      kind: "parse-error";
+      parseErrorId: string;
+      offset: number;
+      line: number;
+      column: number;
+    }
+  | {
+      seq: number;
+      kind: "tree-node";
+      nodeKind: XmlNodeKind;
+      nodeId: number;
+      qName: string | null;
+      spanStart: number;
+      spanEnd: number;
+    }
+  | {
+      seq: number;
+      kind: "summary";
+      nodeCount: number;
+      tokenCount: number;
+      parseErrorCount: number;
+      determinismHash: string;
+      truncated: boolean;
+    };
+
+export interface XmlReplayContract {
+  contract: "xml-replay-v1";
+  sourceKind: "string" | "bytes" | "document";
+  inputHash: string;
+  optionsHash: string;
+  determinismHash: string;
+  events: XmlReplayEvent[];
+  truncated: boolean;
+  replayHash: string;
+}
+
+export interface XmlReplayOptions {
+  parse?: XmlParseOptions;
+  maxEvents?: number;
+}
+
+export type XmlReplayInput = string | Uint8Array | XmlDocument;
+
+export interface XmlReplayVerificationResult {
+  ok: boolean;
+  expectedReplayHash: string;
+  observedReplayHash: string;
+  mismatch: "replay-hash-mismatch" | null;
+}
+
 export interface XmlDocument {
   kind: "document";
   source: string | null;

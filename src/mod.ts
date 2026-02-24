@@ -9,6 +9,7 @@ import {
   verifyCanonicalSha256,
   verifyCanonicalXmlSignature
 } from "./public/canonical.js";
+import { createXmlReplayContract, verifyXmlReplayContract } from "./public/diagnostics.js";
 import {
   findFirstElementByQName,
   iterateElements,
@@ -29,6 +30,11 @@ export type {
   XmlParseBudgets,
   XmlParseError,
   XmlParseOptions,
+  XmlReplayContract,
+  XmlReplayEvent,
+  XmlReplayInput,
+  XmlReplayOptions,
+  XmlReplayVerificationResult,
   XmlSpan,
   XmlTextNode,
   XmlToken
@@ -45,11 +51,13 @@ export {
   listElementsByQName,
   canonicalizeXml,
   computeCanonicalSha256,
+  createXmlReplayContract,
   listTextNodes,
   signCanonicalXml,
   validateXmlProfile,
   verifyCanonicalSha256,
-  verifyCanonicalXmlSignature
+  verifyCanonicalXmlSignature,
+  verifyXmlReplayContract
 };
 
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {
