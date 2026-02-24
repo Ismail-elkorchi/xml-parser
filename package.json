@@ -28,6 +28,7 @@
     "smoke:bun": "npm run build && bun scripts/smoke/runtime-smoke.mjs",
     "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
     "test:fuzz": "npm run build && node scripts/eval/check-security-adversarial.mjs",
+    "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
     "eval:ci": "node scripts/eval/run-eval.mjs --profile=ci",
     "eval:release": "node scripts/eval/run-eval.mjs --profile=release"
   },

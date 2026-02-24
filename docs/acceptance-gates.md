@@ -16,6 +16,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-090`: serializer-determinism
 - `G-100`: integration-reliability
 - `G-110`: release-readiness
+- `G-115`: performance-complexity
 
 ## CI profile
 Required reports:
@@ -31,6 +32,7 @@ Required reports:
 - `reports/security-adversarial.json` with `ok=true`
 - `reports/serializer-determinism.json` with `ok=true`
 - `reports/integration-reliability.json` with `ok=true`
+- `reports/performance-complexity.json` with `ok=true`
 
 ## Release profile
 Required reports:
