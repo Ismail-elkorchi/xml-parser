@@ -18,7 +18,8 @@ All evaluation artifacts are written under `reports/`.
 - `tokenizer-determinism.json`
   - `suite`, `timestamp`, `ok`, `deterministic`, `tokenCount`, `hash`
 - `conformance-fixtures.json`
-  - `suite`, `timestamp`, `ok`, `caseCount`, `passCount`, `failCount`, `failures[]`, `cases[]`
+  - `suite`, `timestamp`, `ok`, `caseCount`, `passCount`, `failCount`, `categories[]`, `failures[]`, `cases[]`
+  - `categories[]`: `category`, `total`, `pass`, `fail`, `passRate`, `minPassRate`, `ok`
 - `tree-namespace.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `stream-budgets.json`
