@@ -27,7 +27,8 @@ for (const path of [
   "docs/parse-errors.md",
   "docs/query-layer.md",
   "docs/schema-validation.md",
-  "docs/canonical-signature.md"
+  "docs/canonical-signature.md",
+  "docs/agent-diagnostics-replay.md"
 ]) {
   try {
     await fs.access(new URL(`../../${path}`, import.meta.url));

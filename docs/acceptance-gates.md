@@ -14,6 +14,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-059`: schema-validation
 - `G-060`: tree-namespace
 - `G-061`: canonical-signature
+- `G-062`: agent-diagnostics-replay
 - `G-070`: stream-budgets
 - `G-080`: security-adversarial
 - `G-090`: serializer-determinism
@@ -35,6 +36,7 @@ Required reports:
 - `reports/query-layer.json` with `ok=true`
 - `reports/schema-validation.json` with `ok=true`
 - `reports/canonical-signature.json` with `ok=true`
+- `reports/agent-diagnostics-replay.json` with `ok=true`
 - `reports/tree-namespace.json` with `ok=true`
 - `reports/stream-budgets.json` with `ok=true`
 - `reports/security-adversarial.json` with `ok=true`
@@ -53,5 +55,7 @@ Required reports:
 - Runtime code under `src/` does not import Node builtins.
 - DTD/external entities are default-deny.
 - Conformance determinism parity applies to normal and malformed inputs across string/bytes/stream paths.
+- Agent diagnostics replay artifacts are deterministic across Node/Deno/Bun for stable fixtures.
 - Security-adversarial gate requires deterministic fuzz coverage with minimum run count and parse-error diversity.
+- Agent diagnostics replay gate requires exported replay APIs and corresponding contract documentation.
 - Budget exhaustion must fail with structured error semantics.

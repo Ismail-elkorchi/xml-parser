@@ -26,6 +26,10 @@ All evaluation artifacts are written under `reports/`.
   - `suite`, `timestamp`, `ok`, `checks`, `profile`, `validResult`, `invalidResult`
 - `canonical-signature.json`
   - `suite`, `timestamp`, `ok`, `checks`, `canonicalLength`, `digest`, `signatureBytes`
+- `agent-diagnostics-replay.json`
+  - `suite`, `timestamp`, `ok`, `checks`, `runtimes`
+  - `checks`: `exportsPresent`, `docsPresent`, `runtimeCommandsOk`, `validCrossRuntimeEqual`, `malformedCrossRuntimeEqual`, `validIncludesToken`, `validIncludesTreeNode`, `validIncludesSummary`, `malformedIncludesParseError`
+  - `runtimes`: fixture buckets `valid` and `malformed`, each with `node`, `deno`, `bun` payloads including `replayHash`, `determinismHash`, `eventKinds`, `eventCount`, `truncated`
 - `tree-namespace.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `stream-budgets.json`
