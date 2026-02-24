@@ -26,7 +26,9 @@ All evaluation artifacts are written under `reports/`.
 - `serializer-determinism.json`
   - `suite`, `timestamp`, `ok`, `deterministic`, `roundtripOk`
 - `security-adversarial.json`
-  - `suite`, `timestamp`, `ok`, `checks[]`
+  - `suite`, `timestamp`, `ok`, `corpus`, `fuzz`
+  - `corpus`: `total`, `pass`, `fail`, `failures[]`
+  - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `parseErrorFrequency`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `release-readiness.json` (release profile)

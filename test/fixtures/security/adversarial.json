@@ -1,0 +1,106 @@
+{
+  "cases": [
+    {
+      "id": "adv-001-dtd-default-deny",
+      "xml": "<!DOCTYPE root><root/>",
+      "expectedErrorIds": ["disallowed-dtd", "unsupported-declaration"]
+    },
+    {
+      "id": "adv-002-external-entity-default-deny",
+      "xml": "<!DOCTYPE root SYSTEM \"https://example.com/x.dtd\"><root/>",
+      "options": {"allowDtd": true},
+      "expectedErrorIds": ["disallowed-external-entity", "unsupported-declaration"]
+    },
+    {
+      "id": "adv-003-entity-expansion-like",
+      "xml": "<root>&bogus;&bogus;&bogus;&bogus;&bogus;</root>",
+      "expectedErrorIds": [
+        "undefined-entity",
+        "undefined-entity",
+        "undefined-entity",
+        "undefined-entity",
+        "undefined-entity"
+      ]
+    },
+    {
+      "id": "adv-004-depth-budget",
+      "xml": "<a><b><c><d/></c></b></a>",
+      "options": {"budgets": {"maxDepth": 2}},
+      "expectedThrowBudget": "maxDepth"
+    },
+    {
+      "id": "adv-005-node-budget",
+      "xml": "<root><a/><b/><c/><d/><e/></root>",
+      "options": {"budgets": {"maxNodes": 3}},
+      "expectedThrowBudget": "maxNodes"
+    },
+    {
+      "id": "adv-006-text-budget",
+      "xml": "<root>abcdefghijklmnopqrstuvwxyz</root>",
+      "options": {"budgets": {"maxTextBytes": 8}},
+      "expectedThrowBudget": "maxTextBytes"
+    },
+    {
+      "id": "adv-007-error-budget",
+      "xml": "<root p:a=\"1\" q:b=\"2\" r:c=\"3\"/>",
+      "options": {"budgets": {"maxErrors": 1}},
+      "expectedThrowBudget": "maxErrors"
+    },
+    {
+      "id": "adv-008-invalid-comment-tail",
+      "xml": "<root><!--x</root>",
+      "expectedErrorIds": ["malformed-comment", "unclosed-tag"]
+    },
+    {
+      "id": "adv-009-invalid-cdata-tail",
+      "xml": "<root><![CDATA[x</root>",
+      "expectedErrorIds": ["malformed-cdata", "unclosed-tag"]
+    },
+    {
+      "id": "adv-010-invalid-attrs",
+      "xml": "<root a=1 b=2/>",
+      "expectedErrorIds": ["malformed-attribute", "no-root-element"]
+    },
+    {
+      "id": "adv-011-unexpected-end",
+      "xml": "<root></a></root>",
+      "expectedErrorIds": ["unexpected-end-tag"]
+    },
+    {
+      "id": "adv-012-multiple-root",
+      "xml": "<a/><b/><c/>",
+      "expectedErrorIds": ["multiple-root-elements", "multiple-root-elements"]
+    },
+    {
+      "id": "adv-013-text-outside-root",
+      "xml": "x<root/>y",
+      "expectedErrorIds": ["text-outside-root", "text-outside-root"]
+    },
+    {
+      "id": "adv-014-namespace-poison",
+      "xml": "<root xmlns:xml=\"urn:wrong\"/>",
+      "expectedErrorIds": ["namespace-prefix-redefined"]
+    },
+    {
+      "id": "adv-015-prefix-undefined",
+      "xml": "<q:root><q:x/></q:root>",
+      "expectedErrorIds": ["namespace-prefix-undefined", "namespace-prefix-undefined"]
+    },
+    {
+      "id": "adv-016-proc-inst",
+      "xml": "<?evil run?><root/>",
+      "expectedErrorIds": ["unsupported-processing-instruction", "unsupported-declaration"]
+    },
+    {
+      "id": "adv-017-xml-decl-mid-document",
+      "xml": "<a/><?xml version=\"1.0\"?><b/>",
+      "expectedErrorIds": ["xml-declaration-not-at-start", "multiple-root-elements"]
+    },
+    {
+      "id": "adv-018-max-input-bytes",
+      "xml": "<root>01234567890123456789</root>",
+      "options": {"budgets": {"maxInputBytes": 10}},
+      "expectedThrowBudget": "maxInputBytes"
+    }
+  ]
+}
