@@ -34,6 +34,9 @@ All evaluation artifacts are written under `reports/`.
 - `performance-complexity.json`
   - `suite`, `timestamp`, `ok`, `limits`, `checks`, `scenarios[]`
   - `checks`: `parseErrorFree`, `nsPerByteRatio`, `growthRatio`
+- `oracle-independent.json` (release profile)
+  - `suite`, `timestamp`, `ok`, `available`, `oracle`, `compared`, `excludedCount`, `excludedCaseIds[]`, `nonGoalParseErrorIds[]`, `mismatches[]`
+  - `oracle`: `tool`, `version`, `executablePath`, `executableSha256`
 - `release-readiness.json` (release profile)
   - `suite`, `timestamp`, `ok`, `packFileCount`, `missing[]`, `docsOk`
 

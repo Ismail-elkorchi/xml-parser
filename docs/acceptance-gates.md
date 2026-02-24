@@ -15,6 +15,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-080`: security-adversarial
 - `G-090`: serializer-determinism
 - `G-100`: integration-reliability
+- `G-105`: oracle-independent
 - `G-110`: release-readiness
 - `G-115`: performance-complexity
 
@@ -37,6 +38,7 @@ Required reports:
 ## Release profile
 Required reports:
 - all CI reports
+- `reports/oracle-independent.json` with `ok=true`
 - `reports/release-readiness.json` with `ok=true`
 
 ## Policy

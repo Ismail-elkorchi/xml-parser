@@ -208,7 +208,15 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
     }
 
     if (source.startsWith("</", lt)) {
-      let inner = skipWhitespace(source, lt + 2);
+      const innerStart = lt + 2;
+      if (isWhitespace(source.charCodeAt(innerStart))) {
+        pushError("malformed-end-tag", "Whitespace after </ is not allowed", lt);
+        const gt = source.indexOf(">", innerStart);
+        cursor = gt < 0 ? source.length : gt + 1;
+        continue;
+      }
+
+      let inner = innerStart;
       const name = readName(source, inner);
       if (!name) {
         pushError("malformed-end-tag", "Invalid end tag name", lt);

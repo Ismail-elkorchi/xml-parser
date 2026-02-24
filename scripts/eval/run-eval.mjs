@@ -49,6 +49,7 @@ run("node", ["scripts/eval/check-serializer-determinism.mjs"]);
 run("node", ["scripts/eval/check-integration-reliability.mjs"]);
 run("node", ["scripts/eval/check-performance-complexity.mjs"]);
 if (profile === "release") {
+  run("node", ["scripts/eval/check-independent-oracle.mjs"]);
   run("node", ["scripts/eval/check-release-readiness.mjs"]);
 }
 run("node", ["scripts/eval/check-gates.mjs", `--profile=${profile}`]);
@@ -72,7 +73,7 @@ const summary = {
     "serializer-determinism",
     "integration-reliability",
     "performance-complexity",
-    ...(profile === "release" ? ["release-readiness"] : []),
+    ...(profile === "release" ? ["oracle-independent", "release-readiness"] : []),
     "gates"
   ]
 };
