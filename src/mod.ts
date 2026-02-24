@@ -3,6 +3,13 @@ import { parseXmlBytesSource, parseXmlSource, parseXmlStreamSource } from "./int
 import { serializeXmlDocument } from "./internal/serializer.js";
 import { tokenizeXml as tokenize } from "./internal/tokenizer.js";
 import {
+  canonicalizeXml,
+  computeCanonicalSha256,
+  signCanonicalXml,
+  verifyCanonicalSha256,
+  verifyCanonicalXmlSignature
+} from "./public/canonical.js";
+import {
   findFirstElementByQName,
   iterateElements,
   listElementsByAttribute,
@@ -27,6 +34,7 @@ export type {
   XmlToken
 } from "./public/types.js";
 export type { XmlValidationIssue, XmlValidationProfile, XmlValidationResult } from "./public/schema.js";
+export type { CanonicalInput } from "./public/canonical.js";
 
 export { XmlBudgetExceededError, getParseErrorSpecRef };
 export {
@@ -35,8 +43,13 @@ export {
   listElementsByAttribute,
   listElementsByNamespace,
   listElementsByQName,
+  canonicalizeXml,
+  computeCanonicalSha256,
   listTextNodes,
-  validateXmlProfile
+  signCanonicalXml,
+  validateXmlProfile,
+  verifyCanonicalSha256,
+  verifyCanonicalXmlSignature
 };
 
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {

@@ -44,6 +44,7 @@ run("node", ["scripts/eval/check-tokenizer-determinism.mjs"]);
 run("node", ["scripts/eval/check-conformance-fixtures.mjs"]);
 run("node", ["scripts/eval/check-query-layer.mjs"]);
 run("node", ["scripts/eval/check-schema-validation.mjs"]);
+run("node", ["scripts/eval/check-canonical-signature.mjs"]);
 run("node", ["scripts/eval/check-tree-namespace.mjs"]);
 run("node", ["scripts/eval/check-stream-budgets.mjs"]);
 run("node", ["scripts/eval/check-security-adversarial.mjs"]);
@@ -71,6 +72,7 @@ const summary = {
     "conformance-fixtures",
     "query-layer",
     "schema-validation",
+    "canonical-signature",
     "tree-namespace",
     "stream-budgets",
     "security-adversarial",
