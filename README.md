@@ -36,6 +36,9 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 - `serializeXml(documentOrNode)`
 - `getParseErrorSpecRef(parseErrorId)`
 
+`parseXmlStream` is incremental and does not retain a full source string in memory.
+For stream parses, `document.source` is `null`.
+
 ## Security model
 - DTD and external entities are disabled by default.
 - Structured budget limits enforce bounded parsing.

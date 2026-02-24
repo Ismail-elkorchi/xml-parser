@@ -127,7 +127,7 @@ export interface XmlParseOptions {
 
 export interface XmlDocument {
   kind: "document";
-  source: string;
+  source: string | null;
   root: XmlElementNode | null;
   errors: XmlParseError[];
   tokens: XmlToken[];

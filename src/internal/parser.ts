@@ -1,3 +1,4 @@
+import { decodeEntities } from "./entities.js";
 import { stableHash } from "./hash.js";
 import { createParseError, XmlBudgetExceededError } from "./parse-errors.js";
 import { tokenizeXml } from "./tokenizer.js";
@@ -5,12 +6,13 @@ import type {
   XmlAttribute,
   XmlDocument,
   XmlElementNode,
-  XmlNode,
   XmlParseBudgets,
   XmlParseError,
   XmlParseOptions,
   XmlSpan,
-  XmlTextNode
+  XmlTextNode,
+  XmlToken,
+  XmlTokenAttribute
 } from "./types.js";
 
 const XML_NS = "http://www.w3.org/XML/1998/namespace";
@@ -74,10 +76,6 @@ function assertBudget(
   }
 }
 
-function asElementNode(node: XmlNode): XmlElementNode | null {
-  return node.kind === "element" ? node : null;
-}
-
 function hasMeaningfulText(value: string): boolean {
   return value.trim().length > 0;
 }
@@ -89,28 +87,214 @@ function createNamespaceRoot(): Map<string, string> {
   ]);
 }
 
-export function parseXmlSource(input: string, options: XmlParseOptions = {}): XmlDocument {
-  const source = String(input ?? "");
-  const budgets = getBudgets(options);
-  const startTime = Date.now();
+function shiftSpan(span: XmlSpan, delta: number): XmlSpan {
+  return {
+    start: span.start + delta,
+    end: span.end + delta,
+    origin: span.origin
+  };
+}
+
+function shiftAttribute(attribute: XmlTokenAttribute, delta: number): XmlTokenAttribute {
+  return {
+    qName: attribute.qName,
+    value: attribute.value,
+    span: shiftSpan(attribute.span, delta)
+  };
+}
+
+function shiftToken(token: XmlToken, delta: number): XmlToken {
+  switch (token.kind) {
+    case "xml-declaration":
+      return { ...token, start: token.start + delta, end: token.end + delta };
+    case "start-tag":
+      return {
+        ...token,
+        start: token.start + delta,
+        end: token.end + delta,
+        attributes: token.attributes.map((attribute) => shiftAttribute(attribute, delta))
+      };
+    case "end-tag":
+    case "text":
+    case "comment":
+    case "cdata":
+    case "doctype":
+    case "processing-instruction":
+      return { ...token, start: token.start + delta, end: token.end + delta };
+  }
+}
+
+function shiftError(error: XmlParseError, delta: number): XmlParseError {
+  return {
+    ...error,
+    offset: error.offset + delta
+  };
+}
+
+function findMarkupEnd(buffer: string): number | null {
+  if (buffer.startsWith("<!--")) {
+    const end = buffer.indexOf("-->");
+    return end < 0 ? null : end + 3;
+  }
+
+  if (buffer.startsWith("<![CDATA[")) {
+    const end = buffer.indexOf("]]>");
+    return end < 0 ? null : end + 3;
+  }
+
+  if (buffer.startsWith("<?")) {
+    const end = buffer.indexOf("?>");
+    return end < 0 ? null : end + 2;
+  }
+
+  let quote: string | null = null;
+  for (let i = 1; i < buffer.length; i += 1) {
+    const char = buffer[i];
+    if (quote === null) {
+      if (char === '"' || char === "'") {
+        quote = char;
+        continue;
+      }
+      if (char === ">") {
+        return i + 1;
+      }
+      continue;
+    }
+
+    if (char === quote) {
+      quote = null;
+    }
+  }
+
+  return null;
+}
+
+function tokenizeXmlStreamChunks(
+  decodedChunks: string[],
+  options: XmlParseOptions,
+  budgets: XmlParseBudgets,
+  startTime: number
+): { tokens: XmlToken[]; errors: XmlParseError[] } {
+  const tokens: XmlToken[] = [];
+  const errors: XmlParseError[] = [];
+  let absoluteOffset = 0;
+  let buffer = "";
+  let pendingText = "";
+  let pendingTextStart = 0;
+
+  const appendText = (value: string): void => {
+    if (value.length === 0) {
+      return;
+    }
+    if (pendingText.length === 0) {
+      pendingTextStart = absoluteOffset;
+    }
+    pendingText += value;
+  };
+
+  const flushPendingText = (): void => {
+    if (pendingText.length === 0) {
+      return;
+    }
+
+    const decoded = decodeEntities(pendingText, "", pendingTextStart, errors);
+    tokens.push({
+      kind: "text",
+      value: decoded,
+      start: pendingTextStart,
+      end: pendingTextStart + pendingText.length
+    });
+    pendingText = "";
+  };
+
+  const processBuffer = (isFinal: boolean): void => {
+    while (true) {
+      assertBudget("maxTimeMs", budgets.maxTimeMs, Date.now() - startTime);
+      assertBudget("maxErrors", budgets.maxErrors, errors.length);
+
+      const bufferedBytes = asBytes(buffer) + asBytes(pendingText);
+      assertBudget("maxStreamBytes", budgets.maxStreamBytes, bufferedBytes);
+
+      if (buffer.length === 0) {
+        return;
+      }
+
+      const lt = buffer.indexOf("<");
+      if (lt < 0) {
+        appendText(buffer);
+        absoluteOffset += buffer.length;
+        buffer = "";
+        return;
+      }
+
+      if (lt > 0) {
+        appendText(buffer.slice(0, lt));
+        absoluteOffset += lt;
+        buffer = buffer.slice(lt);
+        continue;
+      }
+
+      const end = findMarkupEnd(buffer);
+      if (end === null) {
+        if (isFinal) {
+          errors.push(createParseError("malformed-tag", "Unterminated markup in stream", "", absoluteOffset));
+          appendText(buffer);
+          absoluteOffset += buffer.length;
+          buffer = "";
+          flushPendingText();
+        }
+        return;
+      }
+
+      flushPendingText();
+      const segment = buffer.slice(0, end);
+      const segmentResult = tokenizeXml(segment, {
+        allowDtd: options.allowDtd === true,
+        allowExternalEntities: options.allowExternalEntities === true,
+        maxErrors: budgets.maxErrors
+      });
+
+      for (const token of segmentResult.tokens) {
+        tokens.push(shiftToken(token, absoluteOffset));
+      }
+      for (const error of segmentResult.errors) {
+        errors.push(shiftError(error, absoluteOffset));
+      }
+
+      absoluteOffset += end;
+      buffer = buffer.slice(end);
+    }
+  };
+
+  for (const chunk of decodedChunks) {
+    if (chunk.length === 0) {
+      continue;
+    }
+    buffer += chunk;
+    processBuffer(false);
+  }
+
+  processBuffer(true);
+  flushPendingText();
+
+  return { tokens, errors };
+}
+
+function buildDocumentFromTokens(
+  source: string | null,
+  tokenizeResult: { tokens: XmlToken[]; errors: XmlParseError[] },
+  options: XmlParseOptions,
+  budgets: XmlParseBudgets,
+  startTime: number
+): XmlDocument {
   const strict = options.strict !== false;
-  const allowDtd = options.allowDtd === true;
-  const allowExternalEntities = options.allowExternalEntities === true;
-
-  assertBudget("maxInputBytes", budgets.maxInputBytes, asBytes(source));
-
-  const tokenizeResult = tokenizeXml(source, {
-    allowDtd,
-    allowExternalEntities,
-    maxErrors: budgets.maxErrors
-  });
   const errors: XmlParseError[] = [...tokenizeResult.errors];
 
   const pushError = (parseErrorId: string, message: string, offset: number): void => {
     if (errors.length >= budgets.maxErrors) {
       assertBudget("maxErrors", budgets.maxErrors, errors.length + 1);
     }
-    errors.push(createParseError(parseErrorId, message, source, offset));
+    errors.push(createParseError(parseErrorId, message, source ?? "", offset));
   };
 
   const rootContext = createNamespaceRoot();
@@ -311,9 +495,10 @@ export function parseXmlSource(input: string, options: XmlParseOptions = {}): Xm
     const dangling = openStack.pop();
     contextStack.pop();
     if (dangling) {
-      pushError("unclosed-tag", `Unclosed tag: ${dangling.qName}`, source.length);
-      dangling.endTagSpan = inputSpan(source.length, source.length);
-      dangling.span.end = source.length;
+      const endOffset = source === null ? dangling.span.end : (source?.length ?? 0);
+      pushError("unclosed-tag", `Unclosed tag: ${dangling.qName}`, endOffset);
+      dangling.endTagSpan = inputSpan(endOffset, endOffset);
+      dangling.span.end = endOffset;
     }
   }
 
@@ -336,12 +521,25 @@ export function parseXmlSource(input: string, options: XmlParseOptions = {}): Xm
     tokens: doc.tokens
   });
 
-  const rootElement = root ? asElementNode(root) : null;
-  if (rootElement && rootElement.kind !== "element") {
-    pushError("internal-error", "Root node must be element", 0);
-  }
-
   return doc;
+}
+
+export function parseXmlSource(input: string, options: XmlParseOptions = {}): XmlDocument {
+  const source = String(input ?? "");
+  const budgets = getBudgets(options);
+  const startTime = Date.now();
+  const allowDtd = options.allowDtd === true;
+  const allowExternalEntities = options.allowExternalEntities === true;
+
+  assertBudget("maxInputBytes", budgets.maxInputBytes, asBytes(source));
+
+  const tokenizeResult = tokenizeXml(source, {
+    allowDtd,
+    allowExternalEntities,
+    maxErrors: budgets.maxErrors
+  });
+
+  return buildDocumentFromTokens(source, tokenizeResult, options, budgets, startTime);
 }
 
 export function parseXmlBytesSource(input: Uint8Array, options: XmlParseOptions = {}): XmlDocument {
@@ -354,14 +552,15 @@ export async function parseXmlStreamSource(
   options: XmlParseOptions = {}
 ): Promise<XmlDocument> {
   const budgets = getBudgets(options);
-  const decoder = new TextDecoder();
   const reader = stream.getReader();
-  let consumedBytes = 0;
-  let bufferedBytes = 0;
-  const chunks: string[] = [];
+  const decoder = new TextDecoder();
   const startTime = Date.now();
+  const chunks: string[] = [];
+  let consumedBytes = 0;
 
   while (true) {
+    assertBudget("maxTimeMs", budgets.maxTimeMs, Date.now() - startTime);
+
     const { done, value } = await reader.read();
     if (done) {
       break;
@@ -371,14 +570,12 @@ export async function parseXmlStreamSource(
     }
 
     consumedBytes += value.byteLength;
-    bufferedBytes += value.byteLength;
     assertBudget("maxInputBytes", budgets.maxInputBytes, consumedBytes);
-    assertBudget("maxStreamBytes", budgets.maxStreamBytes, bufferedBytes);
-    assertBudget("maxTimeMs", budgets.maxTimeMs, Date.now() - startTime);
-
     chunks.push(decoder.decode(value, { stream: true }));
   }
 
   chunks.push(decoder.decode());
-  return parseXmlSource(chunks.join(""), options);
+
+  const tokenized = tokenizeXmlStreamChunks(chunks, options, budgets, startTime);
+  return buildDocumentFromTokens(null, tokenized, options, budgets, startTime);
 }
