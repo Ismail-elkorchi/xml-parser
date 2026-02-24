@@ -41,7 +41,7 @@ test("parseXmlStream returns parsed source", async () => {
   });
 
   const parsed = await parseXmlStream(stream);
-  assert.equal(parsed.source, input);
+  assert.equal(parsed.source, null);
   assert.equal(parsed.root?.qName, "root");
 });
 

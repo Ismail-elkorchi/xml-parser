@@ -19,17 +19,23 @@ export function getParseErrorSpecRef(parseErrorId: string): string {
 }
 
 export function createParseError(parseErrorId: string, message: string, source: string, offset: number): XmlParseError {
-  const boundedOffset = Math.max(0, Math.min(offset, source.length));
+  const boundedOffset = source.length > 0
+    ? Math.max(0, Math.min(offset, source.length))
+    : Math.max(0, offset);
   let line = 1;
   let column = 1;
 
-  for (let i = 0; i < boundedOffset; i += 1) {
-    if (source.charCodeAt(i) === 10) {
-      line += 1;
-      column = 1;
-    } else {
-      column += 1;
+  if (source.length > 0) {
+    for (let i = 0; i < Math.min(boundedOffset, source.length); i += 1) {
+      if (source.charCodeAt(i) === 10) {
+        line += 1;
+        column = 1;
+      } else {
+        column += 1;
+      }
     }
+  } else {
+    column = boundedOffset + 1;
   }
 
   return {
