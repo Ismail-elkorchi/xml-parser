@@ -10,8 +10,8 @@
   - XML declaration token capture
 
 ## Explicit exclusions
-- DTD processing is disabled by default.
-- External entity resolution is disabled by default.
+- DTD processing is disabled.
+- External entity resolution is disabled.
 - Processing instructions beyond XML declaration are treated as unsupported.
 - No XPath/XQuery execution.
 - No schema validation.

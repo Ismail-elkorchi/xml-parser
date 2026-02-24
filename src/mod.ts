@@ -42,8 +42,6 @@ export function serializeXml(input: XmlDocument | XmlNode): string {
 export function tokenizeXml(input: string, options: XmlParseOptions = {}): XmlToken[] {
   const source = String(input ?? "");
   const tokens = tokenize(source, {
-    allowDtd: options.allowDtd === true,
-    allowExternalEntities: options.allowExternalEntities === true,
     maxErrors: options.budgets?.maxErrors ?? 1_000
   });
   return tokens.tokens;

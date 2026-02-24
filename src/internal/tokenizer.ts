@@ -3,8 +3,6 @@ import { createParseError } from "./parse-errors.js";
 import type { XmlParseError, XmlToken, XmlTokenAttribute } from "./types.js";
 
 interface TokenizeOptions {
-  allowDtd: boolean;
-  allowExternalEntities: boolean;
   maxErrors: number;
 }
 
@@ -191,10 +189,9 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
       }
       const body = source.slice(lt + 2, end);
       const hasExternalRef = /\bSYSTEM\b|\bPUBLIC\b/i.test(body);
-      if (!options.allowDtd) {
-        pushError("disallowed-dtd", "DTD declarations are disabled by default", lt);
-      } else if (hasExternalRef && !options.allowExternalEntities) {
-        pushError("disallowed-external-entity", "External entities are disabled by default", lt);
+      pushError("disallowed-dtd", "DTD declarations are disabled", lt);
+      if (hasExternalRef) {
+        pushError("disallowed-external-entity", "External entities are disabled", lt);
       }
 
       tokens.push({

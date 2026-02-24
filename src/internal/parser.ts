@@ -171,7 +171,6 @@ function findMarkupEnd(buffer: string): number | null {
 
 function tokenizeXmlStreamChunks(
   decodedChunks: string[],
-  options: XmlParseOptions,
   budgets: XmlParseBudgets,
   startTime: number
 ): { tokens: XmlToken[]; errors: XmlParseError[] } {
@@ -249,8 +248,6 @@ function tokenizeXmlStreamChunks(
       flushPendingText();
       const segment = buffer.slice(0, end);
       const segmentResult = tokenizeXml(segment, {
-        allowDtd: options.allowDtd === true,
-        allowExternalEntities: options.allowExternalEntities === true,
         maxErrors: budgets.maxErrors
       });
 
@@ -528,14 +525,10 @@ export function parseXmlSource(input: string, options: XmlParseOptions = {}): Xm
   const source = String(input ?? "");
   const budgets = getBudgets(options);
   const startTime = Date.now();
-  const allowDtd = options.allowDtd === true;
-  const allowExternalEntities = options.allowExternalEntities === true;
 
   assertBudget("maxInputBytes", budgets.maxInputBytes, asBytes(source));
 
   const tokenizeResult = tokenizeXml(source, {
-    allowDtd,
-    allowExternalEntities,
     maxErrors: budgets.maxErrors
   });
 
@@ -576,6 +569,6 @@ export async function parseXmlStreamSource(
 
   chunks.push(decoder.decode());
 
-  const tokenized = tokenizeXmlStreamChunks(chunks, options, budgets, startTime);
+  const tokenized = tokenizeXmlStreamChunks(chunks, budgets, startTime);
   return buildDocumentFromTokens(null, tokenized, options, budgets, startTime);
 }

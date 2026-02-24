@@ -8,8 +8,7 @@
     {
       "id": "adv-002-external-entity-default-deny",
       "xml": "<!DOCTYPE root SYSTEM \"https://example.com/x.dtd\"><root/>",
-      "options": {"allowDtd": true},
-      "expectedErrorIds": ["disallowed-external-entity", "unsupported-declaration"]
+      "expectedErrorIds": ["disallowed-dtd", "disallowed-external-entity", "unsupported-declaration"]
     },
     {
       "id": "adv-003-entity-expansion-like",

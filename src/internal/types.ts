@@ -120,8 +120,6 @@ export interface XmlParseBudgets {
 
 export interface XmlParseOptions {
   strict?: boolean;
-  allowDtd?: boolean;
-  allowExternalEntities?: boolean;
   budgets?: Partial<XmlParseBudgets>;
 }
 
