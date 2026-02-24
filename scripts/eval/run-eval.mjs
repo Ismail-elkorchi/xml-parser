@@ -43,6 +43,7 @@ run("node", ["scripts/eval/check-parse-error-taxonomy.mjs"]);
 run("node", ["scripts/eval/check-tokenizer-determinism.mjs"]);
 run("node", ["scripts/eval/check-conformance-fixtures.mjs"]);
 run("node", ["scripts/eval/check-query-layer.mjs"]);
+run("node", ["scripts/eval/check-schema-validation.mjs"]);
 run("node", ["scripts/eval/check-tree-namespace.mjs"]);
 run("node", ["scripts/eval/check-stream-budgets.mjs"]);
 run("node", ["scripts/eval/check-security-adversarial.mjs"]);
@@ -69,6 +70,7 @@ const summary = {
     "tokenizer-determinism",
     "conformance-fixtures",
     "query-layer",
+    "schema-validation",
     "tree-namespace",
     "stream-budgets",
     "security-adversarial",
