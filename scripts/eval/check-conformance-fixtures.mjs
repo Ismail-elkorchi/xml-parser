@@ -12,6 +12,39 @@ function sortIds(ids) {
   return [...ids].sort((a, b) => a.localeCompare(b));
 }
 
+const CATEGORY_MIN_PASS_RATE = {
+  core: 1,
+  namespace: 1,
+  declarations: 1,
+  malformed: 1,
+  budgets: 1
+};
+
+function categoryForCaseId(id) {
+  if (id.includes("budget")) {
+    return "budgets";
+  }
+  if (id.includes("namespace") || id.includes("prefix")) {
+    return "namespace";
+  }
+  if (id.includes("doctype") || id.includes("processing-instruction") || id.includes("xml-declaration")) {
+    return "declarations";
+  }
+  if (
+    id.includes("malformed") ||
+    id.includes("unexpected-end-tag") ||
+    id.includes("mismatched-end-tag") ||
+    id.includes("multiple-root") ||
+    id.includes("text-outside-root") ||
+    id.includes("no-root") ||
+    id.includes("undefined-entity") ||
+    id.includes("duplicate-attribute")
+  ) {
+    return "malformed";
+  }
+  return "core";
+}
+
 function normalizeThrow(error) {
   if (!error || typeof error !== "object") {
     return {
@@ -193,13 +226,43 @@ for (const entry of cases) {
 }
 
 const failures = results.filter((entry) => !entry.ok);
+const categoryStats = new Map();
+for (const result of results) {
+  const category = categoryForCaseId(result.id);
+  const current = categoryStats.get(category) ?? { total: 0, pass: 0, fail: 0 };
+  current.total += 1;
+  if (result.ok) {
+    current.pass += 1;
+  } else {
+    current.fail += 1;
+  }
+  categoryStats.set(category, current);
+}
+
+const categoryChecks = [...categoryStats.entries()]
+  .map(([category, stats]) => {
+    const minPassRate = CATEGORY_MIN_PASS_RATE[category] ?? 1;
+    const passRate = stats.total === 0 ? 1 : stats.pass / stats.total;
+    return {
+      category,
+      total: stats.total,
+      pass: stats.pass,
+      fail: stats.fail,
+      passRate,
+      minPassRate,
+      ok: passRate >= minPassRate
+    };
+  })
+  .sort((a, b) => a.category.localeCompare(b.category));
+
 const report = {
   suite: "conformance-fixtures",
   timestamp: new Date().toISOString(),
-  ok: failures.length === 0,
+  ok: failures.length === 0 && categoryChecks.every((entry) => entry.ok),
   caseCount: cases.length,
   passCount: results.length - failures.length,
   failCount: failures.length,
+  categories: categoryChecks,
   failures,
   cases: results
 };
