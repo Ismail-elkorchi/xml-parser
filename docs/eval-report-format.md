@@ -31,6 +31,9 @@ All evaluation artifacts are written under `reports/`.
   - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `parseErrorFrequency`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
+- `performance-complexity.json`
+  - `suite`, `timestamp`, `ok`, `limits`, `checks`, `scenarios[]`
+  - `checks`: `parseErrorFree`, `nsPerByteRatio`, `growthRatio`
 - `release-readiness.json` (release profile)
   - `suite`, `timestamp`, `ok`, `packFileCount`, `missing[]`, `docsOk`
 
@@ -40,3 +43,7 @@ All evaluation artifacts are written under `reports/`.
   - each check includes `gate`, `report`, `ok`, `details`
 - `eval-summary.json`
   - `suite`, `timestamp`, `profile`, `ok`, `reports[]`
+
+## Local oracle reports (non-gated)
+- `oracle-xmllint.json`
+  - `suite`, `timestamp`, `ok`, `available`, `compared`, `mismatches[]`

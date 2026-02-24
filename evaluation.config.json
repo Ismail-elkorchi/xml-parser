@@ -12,7 +12,8 @@
     "security-adversarial": "G-080",
     "serializer-determinism": "G-090",
     "integration-reliability": "G-100",
-    "release-readiness": "G-110"
+    "release-readiness": "G-110",
+    "performance-complexity": "G-115"
   },
   "profiles": {
     "ci": {
@@ -28,7 +29,8 @@
         "stream-budgets",
         "security-adversarial",
         "serializer-determinism",
-        "integration-reliability"
+        "integration-reliability",
+        "performance-complexity"
       ]
     },
     "release": {
@@ -45,6 +47,7 @@
         "security-adversarial",
         "serializer-determinism",
         "integration-reliability",
+        "performance-complexity",
         "release-readiness"
       ]
     }
