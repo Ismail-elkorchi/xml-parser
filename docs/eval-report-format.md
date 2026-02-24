@@ -20,6 +20,8 @@ All evaluation artifacts are written under `reports/`.
 - `conformance-fixtures.json`
   - `suite`, `timestamp`, `ok`, `caseCount`, `passCount`, `failCount`, `categories[]`, `failures[]`, `cases[]`
   - `categories[]`: `category`, `total`, `pass`, `fail`, `passRate`, `minPassRate`, `ok`
+- `query-layer.json`
+  - `suite`, `timestamp`, `ok`, `checks`, `observed`
 - `tree-namespace.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `stream-budgets.json`
