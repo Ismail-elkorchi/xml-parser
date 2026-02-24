@@ -37,6 +37,12 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 - `tokenizeXml(input, options?)`
 - `serializeXml(documentOrNode)`
 - `getParseErrorSpecRef(parseErrorId)`
+- `iterateElements(input)`
+- `findFirstElementByQName(input, qName)`
+- `listElementsByQName(input, qName)`
+- `listElementsByAttribute(input, qName, value?)`
+- `listElementsByNamespace(input, namespaceURI, localName?)`
+- `listTextNodes(input)`
 
 `parseXmlStream` is incremental and does not retain a full source string in memory.
 For stream parses, `document.source` is `null`.
@@ -49,5 +55,6 @@ For stream parses, `document.source` is `null`.
 - `docs/xml-profile.md`
 - `docs/threat-model.md`
 - `docs/parse-errors.md`
+- `docs/query-layer.md`
 - `docs/acceptance-gates.md`
 - `docs/eval-report-format.md`

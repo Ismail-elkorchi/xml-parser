@@ -21,7 +21,7 @@ const required = ["dist/mod.js", "dist/public/types.js", "README.md", "LICENSE"]
 const missing = required.filter((name) => !files.includes(name));
 
 let docsOk = true;
-for (const path of ["docs/xml-profile.md", "docs/threat-model.md", "docs/parse-errors.md"]) {
+for (const path of ["docs/xml-profile.md", "docs/threat-model.md", "docs/parse-errors.md", "docs/query-layer.md"]) {
   try {
     await fs.access(new URL(`../../${path}`, import.meta.url));
   } catch {

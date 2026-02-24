@@ -2,6 +2,14 @@ import { getParseErrorSpecRef, XmlBudgetExceededError } from "./internal/parse-e
 import { parseXmlBytesSource, parseXmlSource, parseXmlStreamSource } from "./internal/parser.js";
 import { serializeXmlDocument } from "./internal/serializer.js";
 import { tokenizeXml as tokenize } from "./internal/tokenizer.js";
+import {
+  findFirstElementByQName,
+  iterateElements,
+  listElementsByAttribute,
+  listElementsByNamespace,
+  listElementsByQName,
+  listTextNodes
+} from "./public/query.js";
 import type { XmlDocument, XmlNode, XmlParseOptions, XmlToken } from "./public/types.js";
 
 export type {
@@ -19,6 +27,14 @@ export type {
 } from "./public/types.js";
 
 export { XmlBudgetExceededError, getParseErrorSpecRef };
+export {
+  findFirstElementByQName,
+  iterateElements,
+  listElementsByAttribute,
+  listElementsByNamespace,
+  listElementsByQName,
+  listTextNodes
+};
 
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {
   return parseXmlSource(input, options);
