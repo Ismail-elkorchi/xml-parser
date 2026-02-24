@@ -100,6 +100,16 @@
       "xml": "<root>01234567890123456789</root>",
       "options": {"budgets": {"maxInputBytes": 10}},
       "expectedThrowBudget": "maxInputBytes"
+    },
+    {
+      "id": "adv-019-malformed-end-tag-whitespace",
+      "xml": "<root></ root>",
+      "expectedErrorIds": ["malformed-end-tag", "unclosed-tag"]
+    },
+    {
+      "id": "adv-020-malformed-processing-instruction",
+      "xml": "<?xml version=\"1.0\"<root/>",
+      "expectedErrorIds": ["malformed-processing-instruction", "no-root-element"]
     }
   ]
 }

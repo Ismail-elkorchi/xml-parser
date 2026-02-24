@@ -47,4 +47,5 @@ Required reports:
 - Runtime code under `src/` does not import Node builtins.
 - DTD/external entities are default-deny.
 - Conformance determinism parity applies to normal and malformed inputs across string/bytes/stream paths.
+- Security-adversarial gate requires deterministic fuzz coverage with minimum run count and parse-error diversity.
 - Budget exhaustion must fail with structured error semantics.
