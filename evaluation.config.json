@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ci": {
+      "requiredReports": ["no-runtime-deps", "no-node-builtins"]
+    },
+    "release": {
+      "requiredReports": ["no-runtime-deps", "no-node-builtins"]
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "@ismail-elkorchi/xml-parser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic, agent-first XML parser.",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/mod.js",
+  "types": "./dist/mod.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/mod.d.ts",
+      "import": "./dist/mod.js"
+    }
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "npm run build && node --test test/**/*.test.mjs",
+    "eval:ci": "node scripts/eval/run-eval.mjs --profile=ci",
+    "eval:release": "node scripts/eval/run-eval.mjs --profile=release"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "eslint": "9.39.2",
+    "eslint-import-resolver-typescript": "4.4.4",
+    "eslint-plugin-boundaries": "5.4.0",
+    "eslint-plugin-import": "2.32.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.55.0"
+  }
+}
