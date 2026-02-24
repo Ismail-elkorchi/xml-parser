@@ -41,6 +41,7 @@ run("node", ["scripts/eval/check-no-node-builtins.mjs"]);
 run("node", ["scripts/eval/check-scope-threat-model.mjs"]);
 run("node", ["scripts/eval/check-parse-error-taxonomy.mjs"]);
 run("node", ["scripts/eval/check-tokenizer-determinism.mjs"]);
+run("node", ["scripts/eval/check-conformance-fixtures.mjs"]);
 run("node", ["scripts/eval/check-tree-namespace.mjs"]);
 run("node", ["scripts/eval/check-stream-budgets.mjs"]);
 run("node", ["scripts/eval/check-security-adversarial.mjs"]);
@@ -63,6 +64,7 @@ const summary = {
     "scope-threat-model",
     "parse-error-taxonomy",
     "tokenizer-determinism",
+    "conformance-fixtures",
     "tree-namespace",
     "stream-budgets",
     "security-adversarial",
