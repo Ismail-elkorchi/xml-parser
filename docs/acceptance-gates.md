@@ -9,6 +9,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-030`: scope-threat-model
 - `G-040`: parse-error-taxonomy
 - `G-050`: tokenizer-determinism
+- `G-055`: conformance-fixtures
 - `G-060`: tree-namespace
 - `G-070`: stream-budgets
 - `G-080`: security-adversarial
@@ -24,6 +25,7 @@ Required reports:
 - `reports/scope-threat-model.json` with `ok=true`
 - `reports/parse-error-taxonomy.json` with `ok=true`
 - `reports/tokenizer-determinism.json` with `ok=true`
+- `reports/conformance-fixtures.json` with `ok=true`
 - `reports/tree-namespace.json` with `ok=true`
 - `reports/stream-budgets.json` with `ok=true`
 - `reports/security-adversarial.json` with `ok=true`
