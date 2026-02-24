@@ -75,8 +75,8 @@ const growthRatio = Number((large.medianNs / medium.medianNs).toFixed(6));
 const parseErrorFree = results.every((item) => item.maxErrors === 0);
 
 const limits = {
-  maxNsPerByteRatio: 3.0,
-  maxGrowthRatioLargeVsMedium: 6.0
+  maxNsPerByteRatio: 1.5,
+  maxGrowthRatioLargeVsMedium: 4.0
 };
 
 const checks = {
