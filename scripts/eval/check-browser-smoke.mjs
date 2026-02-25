@@ -6,11 +6,13 @@ const reportPath = new URL("../../reports/browser-smoke.json", import.meta.url);
 function run(command, args) {
   const result = spawnSync(command, args, { stdio: "inherit" });
   if (result.status !== 0) {
+    if (command === "node" && args[0] === "scripts/smoke/runtime-browser-smoke.mjs") {
+      console.error("Browser smoke prerequisites missing. Run: npx playwright install chromium");
+    }
     process.exit(result.status ?? 1);
   }
 }
 
-run("npx", ["playwright", "install", "chromium"]);
 run("node", ["scripts/smoke/runtime-browser-smoke.mjs", "--report=reports/browser-smoke.json"]);
 
 const report = JSON.parse(await fs.readFile(reportPath, "utf8"));
