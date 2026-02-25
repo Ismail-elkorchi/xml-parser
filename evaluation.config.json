@@ -18,7 +18,8 @@
     "integration-reliability": "G-100",
     "oracle-independent": "G-105",
     "release-readiness": "G-110",
-    "performance-complexity": "G-115"
+    "performance-complexity": "G-115",
+    "browser-smoke": "G-102"
   },
   "profiles": {
     "ci": {
@@ -39,6 +40,7 @@
         "security-adversarial",
         "serializer-determinism",
         "integration-reliability",
+        "browser-smoke",
         "performance-complexity"
       ]
     },
@@ -60,6 +62,7 @@
         "security-adversarial",
         "serializer-determinism",
         "integration-reliability",
+        "browser-smoke",
         "performance-complexity",
         "oracle-independent",
         "release-readiness"

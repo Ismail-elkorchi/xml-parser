@@ -19,6 +19,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-080`: security-adversarial
 - `G-090`: serializer-determinism
 - `G-100`: integration-reliability
+- `G-102`: browser-smoke
 - `G-105`: oracle-independent
 - `G-110`: release-readiness
 - `G-115`: performance-complexity
@@ -42,6 +43,7 @@ Required reports:
 - `reports/security-adversarial.json` with `ok=true`
 - `reports/serializer-determinism.json` with `ok=true`
 - `reports/integration-reliability.json` with `ok=true`
+- `reports/browser-smoke.json` with `ok=true`
 - `reports/performance-complexity.json` with `ok=true`
 
 ## Release profile
