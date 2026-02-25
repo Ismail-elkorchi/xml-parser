@@ -14,3 +14,5 @@
 - CodeQL on pull requests and pushes to `main`.
 - Dependency review on pull requests.
 - OpenSSF Scorecard on push to `main` and workflow dispatch.
+- Browser runtime smoke is executed in CI with Playwright Chromium.
+- Browser smoke evidence is required in `eval:ci` and `eval:release` via `reports/browser-smoke.json`.
