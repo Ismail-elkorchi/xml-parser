@@ -23,6 +23,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-105`: oracle-independent
 - `G-110`: release-readiness
 - `G-115`: performance-complexity
+- `G-129`: require-flag producer coherence
 
 ## CI profile
 Required reports:
@@ -61,3 +62,4 @@ Required reports:
 - Security-adversarial gate requires deterministic fuzz coverage with minimum run count and parse-error diversity.
 - Agent diagnostics replay gate requires exported replay APIs and corresponding contract documentation.
 - Budget exhaustion must fail with structured error semantics.
+- `G-129` enforces evaluation coherence: each required report in a profile must have a gate map entry and an existing producer script.
