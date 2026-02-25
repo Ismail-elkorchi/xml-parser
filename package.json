@@ -19,18 +19,19 @@
     }
   },
   "scripts": {
-    "lint": "eslint . --max-warnings=0",
-    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "build": "tsc -p tsconfig.build.json",
-    "test": "npm run build && node --test test/**/*.test.mjs",
-    "smoke:node": "npm run build && node scripts/smoke/runtime-smoke.mjs",
-    "smoke:deno": "npm run build && deno run --allow-read scripts/smoke/runtime-smoke.mjs",
-    "smoke:bun": "npm run build && bun scripts/smoke/runtime-smoke.mjs",
-    "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
-    "test:fuzz": "npm run build && node scripts/eval/check-security-adversarial.mjs",
-    "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
     "eval:ci": "node scripts/eval/run-eval.mjs --profile=ci",
-    "eval:release": "node scripts/eval/run-eval.mjs --profile=release"
+    "eval:release": "node scripts/eval/run-eval.mjs --profile=release",
+    "lint": "eslint . --max-warnings=0",
+    "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
+    "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
+    "smoke:browser": "npm run build && node scripts/smoke/runtime-browser-smoke.mjs --report=reports/browser-smoke.json",
+    "smoke:bun": "npm run build && bun scripts/smoke/runtime-smoke.mjs",
+    "smoke:deno": "npm run build && deno run --allow-read scripts/smoke/runtime-smoke.mjs",
+    "smoke:node": "npm run build && node scripts/smoke/runtime-smoke.mjs",
+    "test": "npm run build && node --test test/**/*.test.mjs",
+    "test:fuzz": "npm run build && node scripts/eval/check-security-adversarial.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {},
   "devDependencies": {
@@ -39,6 +40,7 @@
     "eslint-import-resolver-typescript": "4.4.4",
     "eslint-plugin-boundaries": "5.4.0",
     "eslint-plugin-import": "2.32.0",
+    "playwright": "1.58.2",
     "typescript": "5.9.3",
     "typescript-eslint": "8.55.0"
   }

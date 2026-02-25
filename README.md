@@ -1,12 +1,13 @@
 # xml-parser
 
-Deterministic, agent-first XML parser for Node, Deno, and Bun.
+Deterministic, agent-first XML parser for Node, Deno, Bun, and browser smoke verification.
 
 ## Status
 - Active alpha.
 - Runtime dependencies are intentionally empty.
 - ESM-only package surface.
 - Enforced runtime matrix: Node, Deno, Bun.
+- Browser runtime smoke evidence is generated and gate-checked.
 
 ## Goals
 - Deterministic parse output and error taxonomy.
@@ -15,7 +16,6 @@ Deterministic, agent-first XML parser for Node, Deno, and Bun.
 
 ## Non-goals (current)
 - Browser DOM implementation.
-- Browser runtime parity claims until a browser gate is implemented.
 - XPath/XQuery execution engine.
 - Automatic schema validation in parser core.
 
@@ -27,6 +27,7 @@ Deterministic, agent-first XML parser for Node, Deno, and Bun.
 - `npm run smoke:node`
 - `npm run smoke:deno`
 - `npm run smoke:bun`
+- `npm run smoke:browser`
 - `npm run test:fuzz`
 - `npm run eval:ci`
 - `npm run eval:release` (requires `python3` for independent oracle check)

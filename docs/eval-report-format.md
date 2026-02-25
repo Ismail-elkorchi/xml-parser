@@ -44,6 +44,8 @@ All evaluation artifacts are written under `reports/`.
   - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `uniqueParseErrorIds`, `parseErrorFrequency`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
+- `browser-smoke.json`
+  - `suite`, `timestamp`, `ok`, `runtime`, `version`, `userAgent`, `hash`, `determinismHash`, `checks`, `requiredChecks`, `requiredChecksOk`
 - `performance-complexity.json`
   - `suite`, `timestamp`, `ok`, `limits`, `checks`, `scenarios[]`
   - `checks`: `parseErrorFree`, `nsPerByteRatio`, `growthRatio`
