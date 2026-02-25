@@ -1,11 +1,12 @@
 # xml-parser
 
-Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
+Deterministic, agent-first XML parser for Node, Deno, and Bun.
 
 ## Status
 - Active alpha.
 - Runtime dependencies are intentionally empty.
 - ESM-only package surface.
+- Enforced runtime matrix: Node, Deno, Bun.
 
 ## Goals
 - Deterministic parse output and error taxonomy.
@@ -14,6 +15,7 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and modern browsers.
 
 ## Non-goals (current)
 - Browser DOM implementation.
+- Browser runtime parity claims until a browser gate is implemented.
 - XPath/XQuery execution engine.
 - Automatic schema validation in parser core.
 
