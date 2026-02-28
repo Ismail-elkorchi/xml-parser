@@ -14,7 +14,7 @@ const hasErrors = idsA.length > 0;
 const specRef = getParseErrorSpecRef(idsA[0] ?? "");
 const specRefOk = specRef === "https://www.w3.org/TR/xml/#sec-well-formed";
 
-let docsContainIds = true;
+let docsContainIds;
 let missingIds = [];
 try {
   const parseErrorDoc = await fs.readFile(new URL("../../docs/parse-errors.md", import.meta.url), "utf8");

@@ -12,6 +12,9 @@
 
 Report vulnerabilities with GitHub private vulnerability reporting for this repository.
 
+- Private reporting entry point:
+  `https://github.com/Ismail-elkorchi/xml-parser/security/advisories/new`
+
 - Include reproduction input, expected behavior, and observed behavior.
 - Include impact details (availability, integrity, confidentiality).
 - Include runtime and version information.
