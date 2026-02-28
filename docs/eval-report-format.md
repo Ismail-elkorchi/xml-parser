@@ -42,10 +42,20 @@ All evaluation artifacts are written under `reports/`.
   - `checks`: `corpusFailures`, `fuzzRunCount`, `crashCount`, `parseErrorCoverage`
   - `corpus`: `total`, `pass`, `fail`, `failures[]`
   - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `uniqueParseErrorIds`, `parseErrorFrequency`
+- `security-evidence.json` (release profile)
+  - `suite`, `timestamp`, `ok`, `checks`
+  - `checks`: `securityPolicyDoc`, `securityTriageDoc`, `codeqlSchedulePresent`, `codeqlSecurityExtendedLane`, `securityAdversarialReportOk`, `governanceBaselineReportOk`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
+  - each fixture includes parse/reparse checks plus extraction-compatibility observations:
+    - `expectedQNameCounts` / `observedQNameCounts`
+    - `expectedAttributeMatches` / `observedAttributeMatches`
+    - `expectedTextNodeCount` / `observedTextNodeCount`
 - `browser-smoke.json`
   - `suite`, `timestamp`, `ok`, `runtime`, `version`, `userAgent`, `hash`, `determinismHash`, `checks`, `requiredChecks`, `requiredChecksOk`
+- `cross-runtime-determinism.json`
+  - `suite`, `timestamp`, `ok`, `runtimes`, `crossRuntime`, `overall`
+  - `crossRuntime`: `ok`, `requiredRuntimes`, `observedHashes`, `uniqueHashCount`
 - `performance-complexity.json`
   - `suite`, `timestamp`, `ok`, `limits`, `checks`, `scenarios[]`
   - `checks`: `parseErrorFree`, `nsPerByteRatio`, `growthRatio`

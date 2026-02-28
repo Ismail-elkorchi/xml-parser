@@ -17,6 +17,8 @@
     "serializer-determinism": "G-090",
     "integration-reliability": "G-100",
     "oracle-independent": "G-105",
+    "security-evidence": "G-103",
+    "cross-runtime-determinism": "G-104",
     "release-readiness": "G-110",
     "performance-complexity": "G-115",
     "browser-smoke": "G-102"
@@ -41,6 +43,7 @@
         "serializer-determinism",
         "integration-reliability",
         "browser-smoke",
+        "cross-runtime-determinism",
         "performance-complexity"
       ]
     },
@@ -63,7 +66,9 @@
         "serializer-determinism",
         "integration-reliability",
         "browser-smoke",
+        "cross-runtime-determinism",
         "performance-complexity",
+        "security-evidence",
         "oracle-independent",
         "release-readiness"
       ]
