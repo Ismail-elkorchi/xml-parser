@@ -4,20 +4,31 @@
       "id": "simple-root",
       "xml": "<root><child/></root>",
       "expectedRoot": "root",
-      "expectedErrorCount": 0
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 0,
+      "expectedQNameCounts": {
+        "child": 1
+      }
     },
     {
       "id": "namespace-prefix",
       "xml": "<n:root xmlns:n=\"urn:n\"><n:x/></n:root>",
       "expectedRoot": "n:root",
-      "expectedErrorCount": 0
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 0,
+      "expectedQNameCounts": {
+        "n:x": 1
+      }
     },
     {
       "id": "mismatched-end-tag",
       "xml": "<root><a></root>",
       "expectedRoot": "root",
       "expectedErrorCount": 1,
-      "expectedReparseErrorCount": 0
+      "expectedReparseErrorCount": 0,
+      "expectedQNameCounts": {
+        "a": 1
+      }
     },
     {
       "id": "text-outside-root",
@@ -25,6 +36,107 @@
       "expectedRoot": "root",
       "expectedErrorCount": 1,
       "expectedReparseErrorCount": 0
+    },
+    {
+      "id": "rss-item-extraction-shape",
+      "xml": "<rss><channel><item id=\"x1\"><title>A</title><link>https://e/x</link></item></channel></rss>",
+      "expectedRoot": "rss",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 2,
+      "expectedQNameCounts": {
+        "item": 1,
+        "title": 1,
+        "link": 1
+      },
+      "expectedAttributeMatches": [
+        {
+          "name": "id",
+          "value": "x1",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": "atom-entry-extraction-shape",
+      "xml": "<feed xmlns=\"urn:atom\"><entry><title>T</title><updated>2026-01-01</updated></entry></feed>",
+      "expectedRoot": "feed",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 2,
+      "expectedQNameCounts": {
+        "entry": 1,
+        "title": 1,
+        "updated": 1
+      }
+    },
+    {
+      "id": "xhtml-content-extraction-shape",
+      "xml": "<root xmlns:x=\"http://www.w3.org/1999/xhtml\"><x:div><x:p>hello</x:p></x:div></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 1,
+      "expectedQNameCounts": {
+        "x:div": 1,
+        "x:p": 1
+      }
+    },
+    {
+      "id": "cdata-extraction-shape",
+      "xml": "<root><description><![CDATA[a < b && c]]></description></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 1,
+      "expectedQNameCounts": {
+        "description": 1
+      }
+    },
+    {
+      "id": "mixed-content-extraction-shape",
+      "xml": "<root><p>alpha <b>beta</b> gamma</p></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 3,
+      "expectedQNameCounts": {
+        "p": 1,
+        "b": 1
+      }
+    },
+    {
+      "id": "pi-before-root-extraction-shape",
+      "xml": "<?xml version=\"1.0\"?><root><child/></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 0,
+      "expectedQNameCounts": {
+        "child": 1
+      }
+    },
+    {
+      "id": "doctype-entity-recovery-shape",
+      "xml": "<!DOCTYPE root [<!ENTITY x \"abc\">]><root>&x;</root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 4,
+      "expectedReparseErrorCount": 0,
+      "expectedTextNodeCount": 1,
+      "expectedQNameCounts": {
+        "root": 1
+      }
+    },
+    {
+      "id": "namespace-attribute-extraction-shape",
+      "xml": "<root xmlns:a=\"urn:a\"><n a:id=\"42\" xmlns=\"urn:default\"/></root>",
+      "expectedRoot": "root",
+      "expectedErrorCount": 0,
+      "expectedTextNodeCount": 0,
+      "expectedQNameCounts": {
+        "n": 1
+      },
+      "expectedAttributeMatches": [
+        {
+          "name": "a:id",
+          "value": "42",
+          "count": 1
+        }
+      ]
     }
   ]
 }

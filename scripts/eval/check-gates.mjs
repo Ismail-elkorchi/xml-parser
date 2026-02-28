@@ -26,9 +26,11 @@ const reportProducerMap = {
   "tree-namespace": "scripts/eval/check-tree-namespace.mjs",
   "stream-budgets": "scripts/eval/check-stream-budgets.mjs",
   "security-adversarial": "scripts/eval/check-security-adversarial.mjs",
+  "security-evidence": "scripts/eval/check-security-evidence.mjs",
   "serializer-determinism": "scripts/eval/check-serializer-determinism.mjs",
   "integration-reliability": "scripts/eval/check-integration-reliability.mjs",
   "browser-smoke": "scripts/eval/check-browser-smoke.mjs",
+  "cross-runtime-determinism": "scripts/eval/check-cross-runtime-determinism.mjs",
   "performance-complexity": "scripts/eval/check-performance-complexity.mjs",
   "oracle-independent": "scripts/eval/check-independent-oracle.mjs",
   "release-readiness": "scripts/eval/check-release-readiness.mjs"

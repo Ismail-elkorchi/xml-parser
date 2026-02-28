@@ -61,6 +61,7 @@ For stream parses, `document.source` is `null`.
 ## Security model
 - DTD and external entities are disabled by default.
 - Structured budget limits enforce bounded parsing.
+- Vulnerability reporting and support window: `SECURITY.md`.
 
 ## Docs
 - `docs/xml-profile.md`

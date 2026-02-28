@@ -20,6 +20,8 @@ All evaluation artifacts are generated under `reports/`.
 - `G-090`: serializer-determinism
 - `G-100`: integration-reliability
 - `G-102`: browser-smoke
+- `G-103`: security-evidence
+- `G-104`: cross-runtime-determinism
 - `G-105`: oracle-independent
 - `G-110`: release-readiness
 - `G-115`: performance-complexity
@@ -44,12 +46,15 @@ Required reports:
 - `reports/security-adversarial.json` with `ok=true`
 - `reports/serializer-determinism.json` with `ok=true`
 - `reports/integration-reliability.json` with `ok=true`
+  - includes deterministic extraction-compatibility fixture checks (`qName` counts, attribute matches, and text-node counts) for replacement-path safety
 - `reports/browser-smoke.json` with `ok=true`
+- `reports/cross-runtime-determinism.json` with `ok=true`
 - `reports/performance-complexity.json` with `ok=true`
 
 ## Release profile
 Required reports:
 - all CI reports
+- `reports/security-evidence.json` with `ok=true`
 - `reports/oracle-independent.json` with `ok=true`
 - `reports/release-readiness.json` with `ok=true`
 
@@ -58,8 +63,10 @@ Required reports:
 - Runtime code under `src/` does not import Node builtins.
 - DTD/external entities are default-deny.
 - Conformance determinism parity applies to normal and malformed inputs across string/bytes/stream paths.
+- Cross-runtime determinism requires Node, Deno, and Bun to produce the same runtime smoke determinism hash.
 - Agent diagnostics replay artifacts are deterministic across Node/Deno/Bun for stable fixtures.
 - Security-adversarial gate requires deterministic fuzz coverage with minimum run count and parse-error diversity.
+- Security-evidence gate requires release artifacts to include security evidence report output proving security documentation, CodeQL policy lane/schedule, and prerequisite security reports are present and passing.
 - Agent diagnostics replay gate requires exported replay APIs and corresponding contract documentation.
 - Budget exhaustion must fail with structured error semantics.
 - `G-129` enforces evaluation coherence: each required report in a profile must have a gate map entry and an existing producer script.
