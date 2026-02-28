@@ -20,6 +20,7 @@ All evaluation artifacts are generated under `reports/`.
 - `G-090`: serializer-determinism
 - `G-100`: integration-reliability
 - `G-102`: browser-smoke
+- `G-103`: security-evidence
 - `G-105`: oracle-independent
 - `G-110`: release-readiness
 - `G-115`: performance-complexity
@@ -50,6 +51,7 @@ Required reports:
 ## Release profile
 Required reports:
 - all CI reports
+- `reports/security-evidence.json` with `ok=true`
 - `reports/oracle-independent.json` with `ok=true`
 - `reports/release-readiness.json` with `ok=true`
 
@@ -60,6 +62,7 @@ Required reports:
 - Conformance determinism parity applies to normal and malformed inputs across string/bytes/stream paths.
 - Agent diagnostics replay artifacts are deterministic across Node/Deno/Bun for stable fixtures.
 - Security-adversarial gate requires deterministic fuzz coverage with minimum run count and parse-error diversity.
+- Security-evidence gate requires release artifacts to include security evidence report output proving security documentation, CodeQL policy lane/schedule, and prerequisite security reports are present and passing.
 - Agent diagnostics replay gate requires exported replay APIs and corresponding contract documentation.
 - Budget exhaustion must fail with structured error semantics.
 - `G-129` enforces evaluation coherence: each required report in a profile must have a gate map entry and an existing producer script.

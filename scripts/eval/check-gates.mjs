@@ -26,6 +26,7 @@ const reportProducerMap = {
   "tree-namespace": "scripts/eval/check-tree-namespace.mjs",
   "stream-budgets": "scripts/eval/check-stream-budgets.mjs",
   "security-adversarial": "scripts/eval/check-security-adversarial.mjs",
+  "security-evidence": "scripts/eval/check-security-evidence.mjs",
   "serializer-determinism": "scripts/eval/check-serializer-determinism.mjs",
   "integration-reliability": "scripts/eval/check-integration-reliability.mjs",
   "browser-smoke": "scripts/eval/check-browser-smoke.mjs",
