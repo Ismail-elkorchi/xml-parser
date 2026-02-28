@@ -1,4 +1,4 @@
-FROM node:24-bookworm
+FROM node:24-bookworm@sha256:9f3b13503acdf9bc1e0213ccb25ebe86ac881cad17636733a1da1be1d44509df
 
 WORKDIR /workspace
 COPY package.json package-lock.json ./
