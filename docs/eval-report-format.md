@@ -49,6 +49,9 @@ All evaluation artifacts are written under `reports/`.
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `browser-smoke.json`
   - `suite`, `timestamp`, `ok`, `runtime`, `version`, `userAgent`, `hash`, `determinismHash`, `checks`, `requiredChecks`, `requiredChecksOk`
+- `cross-runtime-determinism.json`
+  - `suite`, `timestamp`, `ok`, `runtimes`, `crossRuntime`, `overall`
+  - `crossRuntime`: `ok`, `requiredRuntimes`, `observedHashes`, `uniqueHashCount`
 - `performance-complexity.json`
   - `suite`, `timestamp`, `ok`, `limits`, `checks`, `scenarios[]`
   - `checks`: `parseErrorFree`, `nsPerByteRatio`, `growthRatio`
