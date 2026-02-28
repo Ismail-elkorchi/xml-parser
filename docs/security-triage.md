@@ -36,3 +36,7 @@ Handle policy-class Scorecard findings with repo controls, not source rewrites:
 - `SecurityPolicyID`: keep `SECURITY.md` actionable with direct reporting links.
 
 Signals driven by repository age, review model, or ecosystem badges (`MaintainedID`, `CodeReviewID`, `CIIBestPracticesID`) are tracked as governance indicators and do not describe parser-runtime defects.
+
+`FuzzingID` is treated as a runtime security signal. Keep both layers present:
+- deterministic parser fuzz evidence in `reports/security-adversarial.json` via `npm run test:fuzz`
+- repository-level fuzz integration markers under `.clusterfuzzlite/` for Scorecard detection
