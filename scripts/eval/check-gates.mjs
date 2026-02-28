@@ -30,6 +30,7 @@ const reportProducerMap = {
   "serializer-determinism": "scripts/eval/check-serializer-determinism.mjs",
   "integration-reliability": "scripts/eval/check-integration-reliability.mjs",
   "browser-smoke": "scripts/eval/check-browser-smoke.mjs",
+  "cross-runtime-determinism": "scripts/eval/check-cross-runtime-determinism.mjs",
   "performance-complexity": "scripts/eval/check-performance-complexity.mjs",
   "oracle-independent": "scripts/eval/check-independent-oracle.mjs",
   "release-readiness": "scripts/eval/check-release-readiness.mjs"

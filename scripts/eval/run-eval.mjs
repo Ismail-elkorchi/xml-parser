@@ -52,6 +52,7 @@ run("node", ["scripts/eval/check-security-adversarial.mjs"]);
 run("node", ["scripts/eval/check-serializer-determinism.mjs"]);
 run("node", ["scripts/eval/check-integration-reliability.mjs"]);
 run("node", ["scripts/eval/check-browser-smoke.mjs"]);
+run("node", ["scripts/eval/check-cross-runtime-determinism.mjs"]);
 run("node", ["scripts/eval/check-performance-complexity.mjs"]);
 if (profile === "release") {
   run("node", ["scripts/eval/check-security-evidence.mjs"]);
@@ -83,6 +84,7 @@ const summary = {
     "serializer-determinism",
     "integration-reliability",
     "browser-smoke",
+    "cross-runtime-determinism",
     "performance-complexity",
     ...(profile === "release" ? ["security-evidence", "oracle-independent", "release-readiness"] : []),
     "gates"
