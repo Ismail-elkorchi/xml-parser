@@ -46,6 +46,7 @@ Required reports:
 - `reports/security-adversarial.json` with `ok=true`
 - `reports/serializer-determinism.json` with `ok=true`
 - `reports/integration-reliability.json` with `ok=true`
+  - includes deterministic extraction-compatibility fixture checks (`qName` counts, attribute matches, and text-node counts) for replacement-path safety
 - `reports/browser-smoke.json` with `ok=true`
 - `reports/cross-runtime-determinism.json` with `ok=true`
 - `reports/performance-complexity.json` with `ok=true`

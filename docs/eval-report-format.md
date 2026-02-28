@@ -47,6 +47,10 @@ All evaluation artifacts are written under `reports/`.
   - `checks`: `securityPolicyDoc`, `securityTriageDoc`, `codeqlSchedulePresent`, `codeqlSecurityExtendedLane`, `securityAdversarialReportOk`, `governanceBaselineReportOk`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
+  - each fixture includes parse/reparse checks plus extraction-compatibility observations:
+    - `expectedQNameCounts` / `observedQNameCounts`
+    - `expectedAttributeMatches` / `observedAttributeMatches`
+    - `expectedTextNodeCount` / `observedTextNodeCount`
 - `browser-smoke.json`
   - `suite`, `timestamp`, `ok`, `runtime`, `version`, `userAgent`, `hash`, `determinismHash`, `checks`, `requiredChecks`, `requiredChecksOk`
 - `cross-runtime-determinism.json`
