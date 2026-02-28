@@ -11,7 +11,8 @@
 - Budget overruns fail with structured `XmlBudgetExceededError`.
 
 ## CI security workflows
-- CodeQL on pull requests and pushes to `main`.
+- CodeQL on pull requests, pushes to `main`, and weekly schedule.
+- CodeQL runs two explicit suites: `security-extended` and `security-and-quality`.
 - Dependency review on pull requests.
 - OpenSSF Scorecard on push to `main` and workflow dispatch.
 - Browser runtime smoke is executed in CI with Playwright Chromium.
