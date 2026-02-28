@@ -42,6 +42,9 @@ All evaluation artifacts are written under `reports/`.
   - `checks`: `corpusFailures`, `fuzzRunCount`, `crashCount`, `parseErrorCoverage`
   - `corpus`: `total`, `pass`, `fail`, `failures[]`
   - `fuzz`: `seed`, `total`, `crashCount`, `budgetThrowCount`, `parseErrorCount`, `topSlowest[]`, `uniqueParseErrorIds`, `parseErrorFrequency`
+- `security-evidence.json` (release profile)
+  - `suite`, `timestamp`, `ok`, `checks`
+  - `checks`: `securityPolicyDoc`, `securityTriageDoc`, `codeqlSchedulePresent`, `codeqlSecurityExtendedLane`, `securityAdversarialReportOk`, `governanceBaselineReportOk`
 - `integration-reliability.json`
   - `suite`, `timestamp`, `ok`, `fixtures[]`
 - `browser-smoke.json`

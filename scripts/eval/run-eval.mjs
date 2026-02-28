@@ -54,6 +54,7 @@ run("node", ["scripts/eval/check-integration-reliability.mjs"]);
 run("node", ["scripts/eval/check-browser-smoke.mjs"]);
 run("node", ["scripts/eval/check-performance-complexity.mjs"]);
 if (profile === "release") {
+  run("node", ["scripts/eval/check-security-evidence.mjs"]);
   run("node", ["scripts/eval/check-independent-oracle.mjs"]);
   run("node", ["scripts/eval/check-release-readiness.mjs"]);
 }
@@ -83,7 +84,7 @@ const summary = {
     "integration-reliability",
     "browser-smoke",
     "performance-complexity",
-    ...(profile === "release" ? ["oracle-independent", "release-readiness"] : []),
+    ...(profile === "release" ? ["security-evidence", "oracle-independent", "release-readiness"] : []),
     "gates"
   ]
 };
