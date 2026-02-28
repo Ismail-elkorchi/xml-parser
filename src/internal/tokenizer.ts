@@ -96,7 +96,6 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
           start: cursor,
           end: source.length
         });
-        seenContent = true;
       }
       break;
     }

@@ -19,7 +19,7 @@ const requiredDocs = [
 
 const details = [];
 for (const doc of requiredDocs) {
-  let ok = true;
+  let ok;
   let missingMarkers = [];
   try {
     const body = await fs.readFile(new URL(`../../${doc.path}`, import.meta.url), "utf8");
