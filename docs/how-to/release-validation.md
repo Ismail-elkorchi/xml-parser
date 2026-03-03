@@ -68,3 +68,24 @@ Before enabling tag-based npm publish:
 ## Falsification probe
 
 Run an independent canary parse + profile validation command outside the default suite.
+
+## 0.1.0 dry-run evidence snapshot (March 3, 2026)
+
+Dry-runs:
+- `npm pack --dry-run --json`: pass
+- `npm publish --dry-run --json --access public`: pass
+- `npx -y jsr publish --dry-run --allow-dirty`: pass
+
+Canary packed-artifact check:
+- packed artifact extracted and imported from `dist/mod.js`
+- parse/serialize canary (`<root><item/></root>`) passes
+
+Manual artifact sample review:
+- required entries present: `package.json`, `dist/mod.js`, `dist/mod.d.ts`, `README.md`, `LICENSE`
+- forbidden content absent: `scripts/`, `test*/`, `docs/`, `reports/`
+
+Automation freshness evidence:
+- Release Audit: success (run `22622280840`)  
+  <https://github.com/Ismail-elkorchi/xml-parser/actions/runs/22622280840>
+- Runtime Latest (Non-blocking): success (run `22622280867`)  
+  <https://github.com/Ismail-elkorchi/xml-parser/actions/runs/22622280867>
