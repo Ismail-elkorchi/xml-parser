@@ -1,3 +1,6 @@
+import process from "node:process";
+import { TextEncoder } from "node:util";
+
 import {
   listElementsByQName,
   parseXml,
@@ -41,4 +44,4 @@ runParseScenario();
 runBytesScenario();
 runValidationScenario();
 
-console.log("examples:run ok");
+process.stdout.write("examples:run ok\n");
