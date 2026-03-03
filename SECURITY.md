@@ -5,30 +5,38 @@
 | Version | Supported |
 | --- | --- |
 | `main` | yes |
-| `0.x` latest release line | yes |
+| latest `0.x` release line | yes |
 | older `0.x` lines | no |
 
 ## Reporting a vulnerability
 
-Report vulnerabilities with GitHub private vulnerability reporting for this repository.
+Report vulnerabilities privately through GitHub Security Advisories:
 
-- Private reporting entry point:
-  `https://github.com/Ismail-elkorchi/xml-parser/security/advisories/new`
+`https://github.com/Ismail-elkorchi/xml-parser/security/advisories/new`
 
-- Include reproduction input, expected behavior, and observed behavior.
-- Include impact details (availability, integrity, confidentiality).
-- Include runtime and version information.
+Include reproduction input, expected behavior, observed behavior, impact details, and runtime/version context.
 
-Do not open public issues for unpatched vulnerabilities.
+## XML threat posture (XXE/DTD/entity expansion)
 
-## Response expectations
+- DTD declarations are rejected by default.
+- External entity declarations are rejected by default.
+- Unbounded entity expansion is not enabled.
+- Undefined entities are surfaced as parse errors.
 
-- Initial triage response target: 3 business days.
-- Reproduction and severity classification target: 7 business days.
-- Fix plan or mitigation target: 14 business days for high/critical issues.
+This default behavior is intended to block common XXE and entity expansion abuse paths.
 
-## Scope notes
+## Safe configuration guidance
 
-- XML parser defaults disable DTD and external entities.
-- Resource budget bypasses and parser crashes are in scope.
-- Tooling-only findings that do not affect shipped behavior are triaged separately.
+- Keep `strict: true` for untrusted input.
+- Set explicit parse budgets (`maxInputBytes`, `maxStreamBytes`, `maxNodes`, `maxDepth`, `maxTextBytes`, `maxTimeMs`).
+- Treat parse errors as hard failures in ingestion pipelines that process untrusted XML.
+
+## Verification commands
+
+```bash
+npm run check:fast
+npm run examples:run
+npm run test:fuzz
+npm run docs:lint:jsr
+npm run docs:test:jsr
+```

@@ -1,102 +1,74 @@
-# xml-parser
+# @ismail-elkorchi/xml-parser
 
-Deterministic, agent-first XML parser for Node, Deno, Bun, and browser smoke verification.
+Deterministic XML parsing for automation pipelines that need stable trees, bounded execution, and explicit security defaults across Node, Deno, Bun, and browser smoke paths.
 
-## Install (target package identity)
+## Install
+
 ```bash
 npm install @ismail-elkorchi/xml-parser
 ```
 
-## Status
-- Active alpha.
-- Runtime dependencies are intentionally empty.
-- ESM-only package surface.
-- Enforced runtime matrix: Node, Deno, Bun.
-- Browser runtime smoke evidence is generated and gate-checked.
-
-## Goals
-- Deterministic parse output and error taxonomy.
-- Security-first defaults for XML threat classes.
-- Streaming support with bounded resource budgets.
-
-## Non-goals (current)
-- Browser DOM implementation.
-- XPath/XQuery execution engine.
-- Automatic schema validation in parser core.
-
-## Commands
-- `npm run lint`
-- `npm run typecheck`
-- `npm run build`
-- `npm test`
-- `npm run smoke:node`
-- `npm run smoke:deno`
-- `npm run smoke:bun`
-- `npm run smoke:browser`
-- `npm run test:fuzz`
-- `npm run examples:run`
-- `npm run eval:ci`
-- `npm run eval:release` (requires `python3` for independent oracle check)
-- `npm run oracle:xmllint` (local-only, optional binary)
-
-## API
-- `parseXml(input, options?)`
-- `parseXmlBytes(input, options?)`
-- `parseXmlStream(stream, options?)`
-- `tokenizeXml(input, options?)`
-- `serializeXml(documentOrNode)`
-- `getParseErrorSpecRef(parseErrorId)`
-- `iterateElements(input)`
-- `findFirstElementByQName(input, qName)`
-- `listElementsByQName(input, qName)`
-- `listElementsByAttribute(input, qName, value?)`
-- `listElementsByNamespace(input, namespaceURI, localName?)`
-- `listTextNodes(input)`
-- `validateXmlProfile(input, profile)`
-- `canonicalizeXml(input)`
-- `computeCanonicalSha256(input)`
-- `verifyCanonicalSha256(input, expectedHex)`
-- `signCanonicalXml(input, privateKey, algorithm?)`
-- `verifyCanonicalXmlSignature(input, signature, publicKey, algorithm?)`
-- `createXmlReplayContract(input, options?)`
-- `verifyXmlReplayContract(input, expectedContract, options?)`
-
-`parseXmlStream` is incremental and does not retain a full source string in memory.
-For stream parses, `document.source` is `null`.
-
-## Quickstart
 ```ts
-import { parseXml, serializeXml } from "@ismail-elkorchi/xml-parser";
-
-const document = parseXml("<root><item id=\"1\">ok</item></root>");
-console.log(serializeXml(document));
+import { parseXml } from "jsr:@ismail-elkorchi/xml-parser";
 ```
 
-Run executable examples:
+## Success Path
+
+```ts
+import {
+  parseXml,
+  parseXmlStream,
+  serializeXml,
+  validateXmlProfile
+} from "@ismail-elkorchi/xml-parser";
+
+const document = parseXml("<invoice><line amount=\"10\">ok</line></invoice>", {
+  budgets: { maxInputBytes: 4096, maxNodes: 256, maxDepth: 32 }
+});
+
+const stream = new ReadableStream({
+  start(controller) {
+    controller.enqueue(new TextEncoder().encode("<feed><entry id=\"1\"/>"));
+    controller.enqueue(new TextEncoder().encode("<entry id=\"2\"/></feed>"));
+    controller.close();
+  }
+});
+
+const streamed = await parseXmlStream(stream, {
+  budgets: { maxStreamBytes: 4096, maxNodes: 256, maxDepth: 32 }
+});
+
+const profile = validateXmlProfile(document, {
+  expectedRootQName: "invoice",
+  requiredElementQNames: ["line"]
+});
+
+console.log(profile.ok);
+console.log(serializeXml(streamed));
+```
+
+Runnable examples:
 
 ```bash
 npm run examples:run
 ```
 
-## Security model
-- DTD and external entities are disabled by default.
-- Structured budget limits enforce bounded parsing.
-- Vulnerability reporting and support window: `SECURITY.md`.
+## Options / API Reference
 
-## Docs map
-- Entry index: `docs/index.md`
-- Tutorial: `docs/tutorial/first-parse.md`
-- How-to: `docs/how-to/release-validation.md`, `docs/how-to/mutation-pilot.md`
-- Reference: `docs/reference/api-overview.md`
-- Explanation: `docs/explanation/architecture-and-tradeoffs.md`
+- [Options and API reference](./docs/reference/options.md)
 
-## Docs
-- `docs/xml-profile.md`
-- `docs/threat-model.md`
-- `docs/parse-errors.md`
-- `docs/query-layer.md`
-- `docs/schema-validation.md`
-- `docs/canonical-signature.md`
-- `docs/agent-diagnostics-replay.md`
-- `docs/reference/acceptance-gates.md`
-- `docs/reference/eval-report-format.md`
+## When To Use
+
+- You need deterministic parse output and reproducible error reporting.
+- You need XML parsing with explicit budget controls.
+- You need profile validation and canonicalization helpers in one package.
+
+## When Not To Use
+
+- You need a full XML schema engine integrated into parse-time behavior.
+- You need browser DOM APIs.
+- You need permissive processing of DTD or external entities.
+
+## Security Note
+
+DTD and external entity declarations are rejected by default, which blocks common XXE paths. Entity expansion beyond predefined and numeric entities is not enabled. Keep strict parsing and explicit budgets on for untrusted input. See [SECURITY.md](./SECURITY.md).

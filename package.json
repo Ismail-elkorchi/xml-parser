@@ -1,10 +1,16 @@
 {
   "name": "@ismail-elkorchi/xml-parser",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Deterministic, agent-first XML parser.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ismail-elkorchi/xml-parser.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "README.md",
@@ -24,6 +30,9 @@
     "eval:release": "node scripts/quality/eval/run-eval.mjs --profile=release",
     "deps:freshness": "npm outdated || true",
     "examples:run": "npm run build && node examples/run-all.mjs",
+    "check:fast": "npm run lint && npm run typecheck && npm test && npm run examples:run",
+    "docs:lint:jsr": "deno doc --lint --sloppy-imports jsr/mod.ts",
+    "docs:test:jsr": "deno test --doc --no-check --sloppy-imports jsr/mod.ts",
     "lint": "eslint . --max-warnings=0",
     "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
     "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
