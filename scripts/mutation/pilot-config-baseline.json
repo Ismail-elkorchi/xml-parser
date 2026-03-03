@@ -1,0 +1,30 @@
+{
+  "targetFile": "dist/internal/hash.js",
+  "testCommand": ["node", "--test", "test/mutation/hash-baseline.test.mjs"],
+  "mutants": [
+    {
+      "id": "unsorted-keys",
+      "description": "Disable sorted key canonicalization for object keys.",
+      "search": "const keys = Object.keys(source).sort((a, b) => a.localeCompare(b));",
+      "replace": "const keys = Object.keys(source);"
+    },
+    {
+      "id": "non-recursive-canonicalize",
+      "description": "Disable recursive canonicalization for nested values.",
+      "search": "out[key] = canonicalize(source[key]);",
+      "replace": "out[key] = source[key];"
+    },
+    {
+      "id": "hash-xor-disabled",
+      "description": "Disable hash mixing by char code XOR.",
+      "search": "hash ^= BigInt(body.charCodeAt(i));",
+      "replace": "hash ^= 0n;"
+    },
+    {
+      "id": "prime-constant-changed",
+      "description": "Change FNV prime constant.",
+      "search": "const prime = 0x100000001b3n;",
+      "replace": "const prime = 0x100000001b1n;"
+    }
+  ]
+}
