@@ -2,6 +2,11 @@
 
 Deterministic, agent-first XML parser for Node, Deno, Bun, and browser smoke verification.
 
+## Install (target package identity)
+```bash
+npm install @ismail-elkorchi/xml-parser
+```
+
 ## Status
 - Active alpha.
 - Runtime dependencies are intentionally empty.
@@ -29,6 +34,7 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and browser smoke ver
 - `npm run smoke:bun`
 - `npm run smoke:browser`
 - `npm run test:fuzz`
+- `npm run examples:run`
 - `npm run eval:ci`
 - `npm run eval:release` (requires `python3` for independent oracle check)
 - `npm run oracle:xmllint` (local-only, optional binary)
@@ -58,10 +64,31 @@ Deterministic, agent-first XML parser for Node, Deno, Bun, and browser smoke ver
 `parseXmlStream` is incremental and does not retain a full source string in memory.
 For stream parses, `document.source` is `null`.
 
+## Quickstart
+```ts
+import { parseXml, serializeXml } from "@ismail-elkorchi/xml-parser";
+
+const document = parseXml("<root><item id=\"1\">ok</item></root>");
+console.log(serializeXml(document));
+```
+
+Run executable examples:
+
+```bash
+npm run examples:run
+```
+
 ## Security model
 - DTD and external entities are disabled by default.
 - Structured budget limits enforce bounded parsing.
 - Vulnerability reporting and support window: `SECURITY.md`.
+
+## Docs map
+- Entry index: `docs/index.md`
+- Tutorial: `docs/tutorial/first-parse.md`
+- How-to: `docs/how-to/release-validation.md`
+- Reference: `docs/reference/api-overview.md`
+- Explanation: `docs/explanation/architecture-and-tradeoffs.md`
 
 ## Docs
 - `docs/xml-profile.md`
@@ -71,5 +98,5 @@ For stream parses, `document.source` is `null`.
 - `docs/schema-validation.md`
 - `docs/canonical-signature.md`
 - `docs/agent-diagnostics-replay.md`
-- `docs/acceptance-gates.md`
-- `docs/eval-report-format.md`
+- `docs/reference/acceptance-gates.md`
+- `docs/reference/eval-report-format.md`
