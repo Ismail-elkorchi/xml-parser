@@ -1,0 +1,43 @@
+{
+  "schema": "mutation-pilot/v1",
+  "generatedAt": "2026-03-03T13:04:34.165Z",
+  "config": "scripts/mutation/pilot-config.json",
+  "targetFile": "dist/internal/hash.js",
+  "testCommand": [
+    "node",
+    "--test",
+    "test/mutation/hash.test.mjs"
+  ],
+  "mutants": [
+    {
+      "id": "unsorted-keys",
+      "description": "Disable sorted key canonicalization for object keys.",
+      "status": "killed",
+      "testExitCode": 1
+    },
+    {
+      "id": "non-recursive-canonicalize",
+      "description": "Disable recursive canonicalization for nested values.",
+      "status": "killed",
+      "testExitCode": 1
+    },
+    {
+      "id": "hash-xor-disabled",
+      "description": "Disable hash mixing by char code XOR.",
+      "status": "killed",
+      "testExitCode": 1
+    },
+    {
+      "id": "prime-constant-changed",
+      "description": "Change FNV prime constant.",
+      "status": "killed",
+      "testExitCode": 1
+    }
+  ],
+  "totals": {
+    "total": 4,
+    "killed": 4,
+    "survived": 0,
+    "invalid": 0
+  }
+}
