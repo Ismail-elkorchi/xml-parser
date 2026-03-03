@@ -22,6 +22,7 @@
     "build": "tsc -p tsconfig.build.json",
     "eval:ci": "node scripts/quality/eval/run-eval.mjs --profile=ci",
     "eval:release": "node scripts/quality/eval/run-eval.mjs --profile=release",
+    "deps:freshness": "npm outdated || true",
     "examples:run": "npm run build && node examples/run-all.mjs",
     "lint": "eslint . --max-warnings=0",
     "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
