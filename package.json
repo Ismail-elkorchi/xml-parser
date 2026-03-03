@@ -20,8 +20,9 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "eval:ci": "node scripts/eval/run-eval.mjs --profile=ci",
-    "eval:release": "node scripts/eval/run-eval.mjs --profile=release",
+    "eval:ci": "node scripts/quality/eval/run-eval.mjs --profile=ci",
+    "eval:release": "node scripts/quality/eval/run-eval.mjs --profile=release",
+    "examples:run": "npm run build && node examples/run-all.mjs",
     "lint": "eslint . --max-warnings=0",
     "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
     "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
@@ -30,7 +31,7 @@
     "smoke:deno": "npm run build && deno run --allow-read scripts/smoke/runtime-smoke.mjs",
     "smoke:node": "npm run build && node scripts/smoke/runtime-smoke.mjs",
     "test": "npm run build && node --test test/**/*.test.mjs",
-    "test:fuzz": "npm run build && node scripts/eval/check-security-adversarial.mjs",
+    "test:fuzz": "npm run build && node scripts/quality/eval/check-security-adversarial.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {},

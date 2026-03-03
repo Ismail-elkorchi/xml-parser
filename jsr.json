@@ -1,0 +1,14 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@ismail-elkorchi/xml-parser",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./src/mod.ts"
+  },
+  "exclude": [
+    "test/**",
+    "reports/**",
+    "tmp/**",
+    "config/**"
+  ]
+}
