@@ -1,6 +1,6 @@
 {
   "name": "@ismail-elkorchi/xml-parser",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Deterministic, agent-first XML parser.",
   "license": "MIT",
