@@ -72,3 +72,7 @@ npm run examples:run
 ## Security Note
 
 DTD and external entity declarations are rejected by default, which blocks common XXE paths. Entity expansion beyond predefined and numeric entities is not enabled. Keep strict parsing and explicit budgets on for untrusted input. See [SECURITY.md](./SECURITY.md).
+
+## Release Trigger
+
+See [RELEASING.md](./RELEASING.md) for required secrets, trigger methods, and post-publish checks.
