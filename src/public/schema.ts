@@ -40,7 +40,10 @@ function* walkElements(root: XmlElementNode): Generator<XmlElementNode> {
       yield* walkElements(child);
     }
   }
-}
+}/**
+ * Provides deterministic public behavior for `validateXmlProfile`.
+ */
+
 
 export function validateXmlProfile(
   input: XmlDocument | XmlElementNode,

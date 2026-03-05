@@ -14,7 +14,10 @@ function* walkElement(element: XmlElementNode): Generator<XmlElementNode> {
       yield* walkElement(child);
     }
   }
-}
+}/**
+ * Traverses parsed data deterministically for the `iterateElements` public API.
+ */
+
 
 export function* iterateElements(input: XmlDocument | XmlElementNode): Generator<XmlElementNode> {
   const root = asRoot(input);
@@ -22,7 +25,10 @@ export function* iterateElements(input: XmlDocument | XmlElementNode): Generator
     return;
   }
   yield* walkElement(root);
-}
+}/**
+ * Traverses parsed data deterministically for the `listElementsByQName` public API.
+ */
+
 
 export function listElementsByQName(input: XmlDocument | XmlElementNode, qName: string): XmlElementNode[] {
   const matches: XmlElementNode[] = [];
@@ -32,7 +38,10 @@ export function listElementsByQName(input: XmlDocument | XmlElementNode, qName: 
     }
   }
   return matches;
-}
+}/**
+ * Traverses parsed data deterministically for the `findFirstElementByQName` public API.
+ */
+
 
 export function findFirstElementByQName(
   input: XmlDocument | XmlElementNode,
@@ -56,7 +65,10 @@ function hasAttribute(node: XmlElementNode, qName: string, value: string | undef
     }
   }
   return false;
-}
+}/**
+ * Traverses parsed data deterministically for the `listElementsByAttribute` public API.
+ */
+
 
 export function listElementsByAttribute(
   input: XmlDocument | XmlElementNode,
@@ -70,7 +82,10 @@ export function listElementsByAttribute(
     }
   }
   return matches;
-}
+}/**
+ * Traverses parsed data deterministically for the `listElementsByNamespace` public API.
+ */
+
 
 export function listElementsByNamespace(
   input: XmlDocument | XmlElementNode,
@@ -88,7 +103,10 @@ export function listElementsByNamespace(
     matches.push(element);
   }
   return matches;
-}
+}/**
+ * Traverses parsed data deterministically for the `listTextNodes` public API.
+ */
+
 
 export function listTextNodes(input: XmlDocument | XmlElementNode): XmlNode[] {
   const root = asRoot(input);

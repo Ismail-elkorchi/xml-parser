@@ -1,6 +1,9 @@
 import type { XmlBudgetExceededDetails, XmlParseError } from "./types.js";
 
-const XML_WELL_FORMED_SPEC_REF = "https://www.w3.org/TR/xml/#sec-well-formed";
+const XML_WELL_FORMED_SPEC_REF = "https://www.w3.org/TR/xml/#sec-well-formed";/**
+ * Represents a structured public error for `XmlBudgetExceededError` failure cases.
+ */
+
 
 export class XmlBudgetExceededError extends Error {
   readonly details: XmlBudgetExceededDetails;
@@ -11,7 +14,10 @@ export class XmlBudgetExceededError extends Error {
     this.name = "XmlBudgetExceededError";
     this.details = details;
   }
-}
+}/**
+ * Returns deterministic public metadata for `getParseErrorSpecRef`.
+ */
+
 
 export function getParseErrorSpecRef(parseErrorId: string): string {
   void parseErrorId;

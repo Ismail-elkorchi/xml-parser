@@ -204,7 +204,10 @@ function applyMaxEvents(document: XmlDocument, events: XmlReplayEvent[], maxEven
     events: [...trimmed, summary],
     truncated
   };
-}
+}/**
+ * Computes deterministic public output for `createXmlReplayContract`.
+ */
+
 
 export function createXmlReplayContract(
   input: XmlReplayInput,
@@ -232,7 +235,10 @@ export function createXmlReplayContract(
     ...replayCore,
     replayHash: stableHash(replayCore)
   };
-}
+}/**
+ * Verifies public invariants for `verifyXmlReplayContract` deterministically.
+ */
+
 
 export function verifyXmlReplayContract(
   input: XmlReplayInput,
