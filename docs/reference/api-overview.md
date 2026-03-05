@@ -1,37 +1,29 @@
 # API Overview
 
-All exported runtime entrypoints from `src/mod.ts`.
+## JSR Surface
 
-## Parsing and serialization
-- `XmlBudgetExceededError`
-- `getParseErrorSpecRef(parseErrorId)`
-- `parseXml(input, options?)`
-- `parseXmlBytes(input, options?)`
-- `parseXmlStream(stream, options?)`
-- `tokenizeXml(input, options?)`
-- `serializeXml(documentOrNode)`
+JSR exports are defined by [`jsr/mod.ts`](../../jsr/mod.ts).
 
-## Query and traversal
-- `iterateElements(documentOrNode)`
-- `findFirstElementByQName(documentOrNode, qName)`
-- `listElementsByQName(documentOrNode, qName)`
-- `listElementsByAttribute(documentOrNode, name, value?)`
-- `listElementsByNamespace(documentOrNode, namespaceUri)`
-- `listTextNodes(documentOrNode)`
+Runtime exports:
+- Parsing and serialization: `parseXml`, `parseXmlBytes`, `parseXmlStream`, `tokenizeXml`, `serializeXml`
+- Validation: `validateXmlProfile`
+- Canonicalization and signatures: `canonicalizeXml`, `computeCanonicalSha256`, `verifyCanonicalSha256`, `signCanonicalXml`, `verifyCanonicalXmlSignature`
 
-## Validation and diagnostics
-- `validateXmlProfile(document, profile)`
-- `createXmlReplayContract(document, options?)`
-- `verifyXmlReplayContract(contract, options?)`
+Type exports include `XmlParseBudgets`, `XmlParseOptions`, `XmlDocument`, `XmlNode`, `XmlToken`, `XmlParseError`, `XmlValidationProfile`, `XmlValidationIssue`, `XmlValidationResult`, and `CanonicalInput`.
 
-## Canonicalization and signatures
-- `canonicalizeXml(input)`
-- `computeCanonicalSha256(input)`
-- `verifyCanonicalSha256(input, expectedDigest)`
-- `signCanonicalXml(input, signer)`
-- `verifyCanonicalXmlSignature(input, signature, verifier)`
+## Node/npm Surface
+
+Node/npm type surface is shipped from `dist/mod.d.ts` (source module: `src/mod.ts`).
+
+In addition to JSR exports, Node/npm includes traversal/query helpers, replay-contract helpers, and parser error helper exports.
+
+## JSR Surface vs Node Surface
+
+- JSR focuses on parse, validation, and canonicalization entrypoints.
+- Node/npm additionally exposes traversal helpers, replay helpers, and error helper utilities.
 
 ## Related
 - [Options](./options.md)
+- [Data model](./data-model.md)
 - [Error model](./error-model.md)
 - [Canonicalization and signatures](./canonicalization.md)

@@ -1,6 +1,6 @@
 # Options
 
-## Parse options
+## Parse options (`parseXml`, `parseXmlBytes`, `parseXmlStream`, `tokenizeXml`)
 
 ### `strict`
 - Type: `boolean`
@@ -8,24 +8,45 @@
 - Enforces strict XML well-formedness behavior.
 
 ### `budgets`
-- `maxInputBytes`
-- `maxStreamBytes`
-- `maxNodes`
-- `maxDepth`
-- `maxAttributesPerElement`
-- `maxErrors`
+- Type: `Partial<XmlParseBudgets>`
+- Default values:
+  - `maxInputBytes`: `1_000_000`
+  - `maxStreamBytes`: `1_000_000`
+  - `maxNodes`: `50_000`
+  - `maxDepth`: `256`
+  - `maxAttributesPerElement`: `256`
+  - `maxTextBytes`: `1_000_000`
+  - `maxErrors`: `1_000`
+  - `maxTimeMs`: `2_000`
 
-## Validation options
+Budget excess raises a structured parser budget error.
 
-### `validateXmlProfile(document, profile)`
-- `expectedRootQName`
-- `requiredElementQNames`
-- `requiredAttributes`
+## Validation options (`validateXmlProfile`)
 
-## Replay options
+### `expectedRootQName`
+- Expected QName for root element.
 
-### `createXmlReplayContract(document, options?)`
-- Controls emitted replay scope and event selection.
+### `requiredElementQNames`
+- Element QNames that must appear at least once.
 
-### `verifyXmlReplayContract(contract, options?)`
-- Controls strictness and mismatch handling.
+### `requiredAttributesByElementQName`
+- Map of required attribute names keyed by element QName.
+
+### `maxOccurrencesByElementQName`
+- Map of maximum allowed occurrences keyed by element QName.
+
+Returns `XmlValidationResult` with `ok` and structured issues.
+
+## Canonicalization and signature options
+
+### `signCanonicalXml(input, privateKey, algorithm?)`
+- `algorithm` defaults to `RSASSA-PKCS1-v1_5`.
+
+### `verifyCanonicalXmlSignature(input, signature, publicKey, algorithm?)`
+- Uses the same algorithm default.
+
+## Related
+- [API overview](./api-overview.md)
+- [Data model](./data-model.md)
+- [Error model](./error-model.md)
+- [Canonicalization and signatures](./canonicalization.md)
