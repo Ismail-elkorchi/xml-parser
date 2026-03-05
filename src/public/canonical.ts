@@ -74,7 +74,10 @@ function getSubtle(): SubtleCrypto {
     throw new Error("WebCrypto SubtleCrypto is required");
   }
   return maybeCrypto.subtle;
-}
+}/**
+ * Provides deterministic public behavior for `canonicalizeXml`.
+ */
+
 
 export function canonicalizeXml(input: CanonicalInput): string {
   const root = resolveRoot(input);
@@ -82,18 +85,27 @@ export function canonicalizeXml(input: CanonicalInput): string {
     return "";
   }
   return renderNode(root);
-}
+}/**
+ * Computes deterministic public output for `computeCanonicalSha256`.
+ */
+
 
 export async function computeCanonicalSha256(input: CanonicalInput): Promise<string> {
   const canonical = canonicalizeXml(input);
   const digest = await getSubtle().digest("SHA-256", toArrayBuffer(canonical));
   return toHex(new Uint8Array(digest));
-}
+}/**
+ * Verifies public invariants for `verifyCanonicalSha256` deterministically.
+ */
+
 
 export async function verifyCanonicalSha256(input: CanonicalInput, expectedHex: string): Promise<boolean> {
   const observed = await computeCanonicalSha256(input);
   return observed.toLowerCase() === expectedHex.toLowerCase();
-}
+}/**
+ * Provides deterministic public behavior for `signCanonicalXml`.
+ */
+
 
 export async function signCanonicalXml(
   input: CanonicalInput,
@@ -103,7 +115,10 @@ export async function signCanonicalXml(
   const canonical = canonicalizeXml(input);
   const signature = await getSubtle().sign(algorithm, privateKey, toArrayBuffer(canonical));
   return new Uint8Array(signature);
-}
+}/**
+ * Verifies public invariants for `verifyCanonicalXmlSignature` deterministically.
+ */
+
 
 export async function verifyCanonicalXmlSignature(
   input: CanonicalInput,
