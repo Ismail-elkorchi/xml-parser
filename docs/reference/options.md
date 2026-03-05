@@ -1,48 +1,52 @@
-# Options and API Reference
+# Options
 
-This page is the primary API surface summary for `@ismail-elkorchi/xml-parser`.
+## Parse options (`parseXml`, `parseXmlBytes`, `parseXmlStream`, `tokenizeXml`)
 
-## Core API
+### `strict`
+- Type: `boolean`
+- Default: `true`
+- Enforces strict XML well-formedness behavior.
 
-- `parseXml(input, options?)`
-- `parseXmlBytes(input, options?)`
-- `parseXmlStream(stream, options?)`
-- `serializeXml(documentOrNode)`
-- `tokenizeXml(input, options?)`
-- `validateXmlProfile(input, profile)`
-- `canonicalizeXml(input)`
-- `computeCanonicalSha256(input)`
+### `budgets`
+- Type: `Partial<XmlParseBudgets>`
+- Default values:
+  - `maxInputBytes`: `1_000_000`
+  - `maxStreamBytes`: `1_000_000`
+  - `maxNodes`: `50_000`
+  - `maxDepth`: `256`
+  - `maxAttributesPerElement`: `256`
+  - `maxTextBytes`: `1_000_000`
+  - `maxErrors`: `1_000`
+  - `maxTimeMs`: `2_000`
 
-## Parse options
+Budget excess raises a structured parser budget error.
 
-- `strict?: boolean` (default: `true`)
-- `budgets?: Partial<XmlParseBudgets>`
+## Validation options (`validateXmlProfile`)
 
-`strict: false` is an explicit opt-in compatibility mode. Keep `strict: true` for untrusted input paths.
+### `expectedRootQName`
+- Expected QName for root element.
 
-## XmlParseBudgets keys
+### `requiredElementQNames`
+- Element QNames that must appear at least once.
 
-- `maxInputBytes`
-- `maxStreamBytes`
-- `maxNodes`
-- `maxDepth`
-- `maxAttributesPerElement`
-- `maxTextBytes`
-- `maxErrors`
-- `maxTimeMs`
+### `requiredAttributesByElementQName`
+- Map of required attribute names keyed by element QName.
 
-## Security-relevant behavior
+### `maxOccurrencesByElementQName`
+- Map of maximum allowed occurrences keyed by element QName.
 
-- DTD declarations are rejected by default.
-- External entity declarations are rejected by default.
-- Undefined entities are reported as parse errors.
-- Budget overruns throw `XmlBudgetExceededError`.
+Returns `XmlValidationResult` with `ok` and structured issues.
 
-## Verify these claims
+## Canonicalization and signature options
 
-```bash
-npm run check:fast
-npm run examples:run
-npm run docs:lint:jsr
-npm run docs:test:jsr
-```
+### `signCanonicalXml(input, privateKey, algorithm?)`
+- `algorithm` defaults to `RSASSA-PKCS1-v1_5`.
+
+### `verifyCanonicalXmlSignature(input, signature, publicKey, algorithm?)`
+- Uses the same algorithm default.
+
+## Related
+- [API overview](./api-overview.md)
+- [Data model](./data-model.md)
+- [Error model](./error-model.md)
+- [Canonicalization and signatures](./canonicalization.md)

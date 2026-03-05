@@ -20,7 +20,7 @@ async function readReport(name) {
 const checks = {};
 
 checks.securityPolicyDoc = await fileExists("SECURITY.md");
-checks.securityTriageDoc = await fileExists("docs/security-triage.md");
+checks.securityPostureDoc = await fileExists("docs/explanation/security-posture.md");
 
 const codeqlWorkflowPath = new URL("../../../.github/workflows/codeql.yml", import.meta.url);
 const codeqlWorkflowText = await fs.readFile(codeqlWorkflowPath, "utf8");

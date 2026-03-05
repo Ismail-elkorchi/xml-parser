@@ -1,6 +1,20 @@
 # @ismail-elkorchi/xml-parser
 
-Deterministic XML parsing for automation pipelines that need stable trees, bounded execution, and explicit security defaults across Node, Deno, Bun, and browser smoke paths.
+Deterministic XML parsing and utility APIs for automation across Node, Deno, Bun, and browser smoke paths.
+
+No runtime dependencies: this package ships with zero runtime dependencies.
+
+## When To Use
+
+- You need deterministic XML parse and serialization behavior.
+- You need explicit budget controls for untrusted XML.
+- You need canonicalization, hashing, and replay utilities in one package.
+
+## When Not To Use
+
+- You need a full XSD engine integrated into parse-time behavior.
+- You need browser DOM runtime APIs.
+- You need permissive DTD/external-entity processing.
 
 ## Install
 
@@ -8,71 +22,91 @@ Deterministic XML parsing for automation pipelines that need stable trees, bound
 npm install @ismail-elkorchi/xml-parser
 ```
 
+```bash
+deno add jsr:@ismail-elkorchi/xml-parser
+```
+
+## Import
+
 ```ts
+import { parseXml } from "@ismail-elkorchi/xml-parser";
+```
+
+```txt
 import { parseXml } from "jsr:@ismail-elkorchi/xml-parser";
 ```
 
-## Success Path
+## Copy/Paste Examples
+
+### Example 1: Parse XML
 
 ```ts
-import {
-  parseXml,
-  parseXmlStream,
-  serializeXml,
-  validateXmlProfile
-} from "@ismail-elkorchi/xml-parser";
+import { parseXml } from "@ismail-elkorchi/xml-parser";
 
-const document = parseXml("<invoice><line amount=\"10\">ok</line></invoice>", {
-  budgets: { maxInputBytes: 4096, maxNodes: 256, maxDepth: 32 }
-});
+const document = parseXml("<root><item/></root>");
+console.log(document.kind);
+```
+
+### Example 2: Parse streaming XML
+
+```ts
+import { parseXmlStream } from "@ismail-elkorchi/xml-parser";
 
 const stream = new ReadableStream({
   start(controller) {
-    controller.enqueue(new TextEncoder().encode("<feed><entry id=\"1\"/>"));
-    controller.enqueue(new TextEncoder().encode("<entry id=\"2\"/></feed>"));
+    controller.enqueue(new TextEncoder().encode("<root><item/></root>"));
     controller.close();
   }
 });
 
-const streamed = await parseXmlStream(stream, {
-  budgets: { maxStreamBytes: 4096, maxNodes: 256, maxDepth: 32 }
-});
-
-const profile = validateXmlProfile(document, {
-  expectedRootQName: "invoice",
-  requiredElementQNames: ["line"]
-});
-
-console.log(profile.ok);
-console.log(serializeXml(streamed));
+const document = await parseXmlStream(stream, { budgets: { maxStreamBytes: 4096 } });
+console.log(document.kind);
 ```
 
-Runnable examples:
+### Example 3: Query XML elements
+
+```ts
+import { listElementsByQName, parseXml } from "@ismail-elkorchi/xml-parser";
+
+const document = parseXml("<root><item/><item/></root>");
+console.log(listElementsByQName(document, "item").length);
+```
+
+### Example 4: Validate profile
+
+```ts
+import { parseXml, validateXmlProfile } from "@ismail-elkorchi/xml-parser";
+
+const document = parseXml("<invoice><line/></invoice>");
+console.log(validateXmlProfile(document, { expectedRootQName: "invoice", requiredElementQNames: ["line"] }).ok);
+```
+
+Run packaged examples:
 
 ```bash
 npm run examples:run
 ```
 
-## Options / API Reference
+## Compatibility
 
-- [Options and API reference](./docs/reference/options.md)
+Runtime compatibility matrix:
 
-## When To Use
+| Runtime | Status |
+| --- | --- |
+| Node.js | Supported |
+| Deno | Supported |
+| Bun | Supported |
+| Browser (evergreen) | Supported |
 
-- You need deterministic parse output and reproducible error reporting.
-- You need XML parsing with explicit budget controls.
-- You need profile validation and canonicalization helpers in one package.
+## Security and Safety Notes
 
-## When Not To Use
+XML parsing is not a trust boundary by itself.
+- Keep strict mode enabled.
+- Configure parse budgets for untrusted input.
+- Validate and sanitize at the application boundary.
 
-- You need a full XML schema engine integrated into parse-time behavior.
-- You need browser DOM APIs.
-- You need permissive processing of DTD or external entities.
+## Documentation
 
-## Security Note
-
-DTD and external entity declarations are rejected by default, which blocks common XXE paths. Entity expansion beyond predefined and numeric entities is not enabled. Keep strict parsing and explicit budgets on for untrusted input. See [SECURITY.md](./SECURITY.md).
-
-## Release Trigger
-
-See [RELEASING.md](./RELEASING.md) for required secrets, trigger methods, and post-publish checks.
+- [Docs index](./docs/index.md)
+- [First parse success tutorial](./docs/tutorial/first-parse.md)
+- [Options reference](./docs/reference/options.md)

@@ -1,5 +1,7 @@
 /**
- * Demonstrates deterministic XML parse + serialize workflow.
+ * What it does: parses an XML document and serializes it with deterministic output.
+ * Expected output: prints "parse-success-path ok" when parse/serialize assertions pass.
+ * Constraints: sample must remain well-formed XML under strict parser defaults.
  * Run: npm run build && node examples/parse-success-path.mjs
  */
 import process from "node:process";

@@ -1,5 +1,7 @@
 /**
- * Demonstrates XML profile validation with required elements and attributes.
+ * What it does: validates a parsed XML document against a profile contract.
+ * Expected output: prints "profile-validation ok" with `result.ok === true`.
+ * Constraints: sample input must include required root, element, and attribute names.
  * Run: npm run build && node examples/profile-validation.mjs
  */
 import process from "node:process";

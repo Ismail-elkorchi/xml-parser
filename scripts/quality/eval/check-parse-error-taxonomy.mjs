@@ -17,7 +17,7 @@ const specRefOk = specRef === "https://www.w3.org/TR/xml/#sec-well-formed";
 let docsContainIds;
 let missingIds = [];
 try {
-  const parseErrorDoc = await fs.readFile(new URL("../../../docs/parse-errors.md", import.meta.url), "utf8");
+  const parseErrorDoc = await fs.readFile(new URL("../../../docs/reference/error-model.md", import.meta.url), "utf8");
   missingIds = [...new Set(idsA)].filter((id) => !parseErrorDoc.includes(`\`${id}\``));
   docsContainIds = missingIds.length === 0;
 } catch {

@@ -4,16 +4,16 @@ const reportPath = new URL("../../../reports/scope-threat-model.json", import.me
 
 const requiredDocs = [
   {
-    path: "docs/xml-profile.md",
-    markers: ["Supported profile", "Explicit exclusions", "Deterministic"]
+    path: "docs/explanation/security-posture.md",
+    markers: ["strict mode", "budgets", "external"]
   },
   {
-    path: "docs/threat-model.md",
-    markers: ["XXE", "CWE-611", "Security defaults", "maxInputBytes"]
+    path: "docs/reference/error-model.md",
+    markers: ["XmlBudgetExceededError", "parseErrorId"]
   },
   {
-    path: "docs/reference/decision-records/ADR-001-xml-profile-security-defaults.md",
-    markers: ["Decision", "disable DTD", "budget"]
+    path: "docs/reference/canonicalization.md",
+    markers: ["canonical", "signature"]
   }
 ];
 
