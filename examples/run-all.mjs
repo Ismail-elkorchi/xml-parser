@@ -1,5 +1,7 @@
 /**
- * Runs all public examples used by README and release checks.
+ * What it does: executes every public XML example as one smoke path.
+ * Expected output: prints "examples:run ok" after all example assertions pass.
+ * Constraints: each example must stay deterministic and independent in shared execution.
  * Run: npm run build && node examples/run-all.mjs
  */
 import process from "node:process";

@@ -19,3 +19,5 @@ Use this index to choose XML parser docs by intent.
 - [Architecture and tradeoffs](./explanation/architecture-and-tradeoffs.md)
 - [Threat model](./threat-model.md)
 - [Security baseline](./security-baseline.md)
+- [Design constraints and non-goals](./explanation/design-constraints-and-non-goals.md)
+- [v0.1.1 CI failure postmortem](./explanation/ci-failure-postmortem-v0.1.1.md)

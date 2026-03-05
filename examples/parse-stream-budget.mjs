@@ -1,5 +1,7 @@
 /**
- * Demonstrates streaming XML parsing with explicit resource budgets.
+ * What it does: parses streamed XML chunks using explicit stream and tree budgets.
+ * Expected output: prints "parse-stream-budget ok" after validating the root element.
+ * Constraints: requires `ReadableStream` support and built `dist/mod.js` artifacts.
  * Run: npm run build && node examples/parse-stream-budget.mjs
  */
 import process from "node:process";
