@@ -23,8 +23,9 @@ const missing = required.filter((name) => !files.includes(name));
 let docsOk = true;
 for (const path of [
   "docs/tutorial/first-parse.md",
-  "docs/how-to/parse-untrusted-xml.md",
-  "docs/how-to/query-xml-elements.md",
+  "docs/how-to/parse-simple-xml.md",
+  "docs/how-to/parse-xml-with-namespaces.md",
+  "docs/how-to/configure-safe-dtd-xxe-handling.md",
   "docs/reference/error-model.md",
   "docs/reference/canonicalization.md",
   "docs/reference/agent-diagnostics-replay.md",

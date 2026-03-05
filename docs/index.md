@@ -6,10 +6,10 @@
 - [First parse success](./tutorial/first-parse.md)
 
 ## How-to
-- [Parse untrusted XML safely](./how-to/parse-untrusted-xml.md)
+- [Parse simple XML](./how-to/parse-simple-xml.md)
+- [Parse XML with namespaces](./how-to/parse-xml-with-namespaces.md)
+- [Configure safe DTD and XXE handling](./how-to/configure-safe-dtd-xxe-handling.md)
 - [Parse XML streams](./how-to/parse-xml-streams.md)
-- [Query XML elements](./how-to/query-xml-elements.md)
-- [Validate XML profiles](./how-to/validate-xml-profiles.md)
 
 ## Reference
 - [API overview](./reference/api-overview.md)

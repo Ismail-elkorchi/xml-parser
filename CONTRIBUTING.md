@@ -19,3 +19,7 @@ Run before opening a pull request:
 - ESM only.
 - Runtime code under `src/` must not import Node builtins.
 - Evaluation artifacts are written under `reports/` and not committed.
+
+## Maintainer docs
+
+- [Maintainer index](./docs/maintainers/index.md)

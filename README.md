@@ -105,10 +105,8 @@ XML parsing is not a trust boundary by itself.
 - Configure parse budgets for untrusted input.
 - Validate and sanitize at the application boundary.
 
-## Docs Map
+## Documentation
 
-- [Docs index](https://github.com/Ismail-elkorchi/xml-parser/blob/main/docs/index.md)
-- [Tutorial](https://github.com/Ismail-elkorchi/xml-parser/blob/main/docs/tutorial/first-parse.md)
-- [How-to guides](https://github.com/Ismail-elkorchi/xml-parser/tree/main/docs/how-to)
-- [Reference](https://github.com/Ismail-elkorchi/xml-parser/tree/main/docs/reference)
-- [Explanation](https://github.com/Ismail-elkorchi/xml-parser/tree/main/docs/explanation)
+- [Docs index](./docs/index.md)
+- [First parse success tutorial](./docs/tutorial/first-parse.md)
+- [Options reference](./docs/reference/options.md)
