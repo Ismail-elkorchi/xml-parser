@@ -1,23 +1,24 @@
-# Documentation Index
+# XML Parser Docs
 
-Use this index to choose XML parser docs by intent.
+`@ismail-elkorchi/xml-parser` provides deterministic XML parsing, query helpers, canonicalization, and validation utilities.
 
 ## Tutorial
-- [First parse walkthrough](./tutorial/first-parse.md)
+- [First parse success](./tutorial/first-parse.md)
 
 ## How-to
-- [Release validation checklist](./how-to/release-validation.md)
-- [Mutation pilot workflow](./how-to/mutation-pilot.md)
+- [Parse untrusted XML safely](./how-to/parse-untrusted-xml.md)
+- [Parse XML streams](./how-to/parse-xml-streams.md)
+- [Query XML elements](./how-to/query-xml-elements.md)
+- [Validate XML profiles](./how-to/validate-xml-profiles.md)
 
 ## Reference
-- [Options and API reference](./reference/options.md)
-- [Acceptance gates](./reference/acceptance-gates.md)
-- [Evaluation report format](./reference/eval-report-format.md)
-- [Decision records](./reference/decision-records/README.md)
+- [API overview](./reference/api-overview.md)
+- [Options](./reference/options.md)
+- [Error model](./reference/error-model.md)
+- [Canonicalization and signatures](./reference/canonicalization.md)
+- [Replay diagnostics](./reference/agent-diagnostics-replay.md)
 
 ## Explanation
-- [Architecture and tradeoffs](./explanation/architecture-and-tradeoffs.md)
-- [Threat model](./threat-model.md)
-- [Security baseline](./security-baseline.md)
-- [Design constraints and non-goals](./explanation/design-constraints-and-non-goals.md)
-- [v0.1.1 CI failure postmortem](./explanation/ci-failure-postmortem-v0.1.1.md)
+- [Design constraints](./explanation/design-constraints.md)
+- [Security posture](./explanation/security-posture.md)
+- [Performance characteristics](./explanation/performance-characteristics.md)

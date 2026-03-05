@@ -1,44 +1,42 @@
-# First Parse Walkthrough
+# First Parse Success
 
-This tutorial shows the baseline workflow for deterministic XML parsing.
+This tutorial gets you from input to deterministic XML output.
 
-## 1. Parse XML text
+## Step 1: Parse XML
+
+```ts
+import { parseXml } from "@ismail-elkorchi/xml-parser";
+
+const document = parseXml("<invoice><line amount=\"10\"/></invoice>");
+console.log(document.kind);
+```
+
+Expected output:
+
+```txt
+document
+```
+
+## Step 2: Serialize XML
 
 ```ts
 import { parseXml, serializeXml } from "@ismail-elkorchi/xml-parser";
 
-const document = parseXml("<root><item id=\"1\">ok</item></root>");
+const document = parseXml("<root><item/></root>");
 console.log(serializeXml(document));
 ```
 
-## 2. Parse bytes
+Expected output:
 
-```ts
-import { listElementsByQName, parseXmlBytes } from "@ismail-elkorchi/xml-parser";
-
-const bytes = new TextEncoder().encode("<feed><entry/></feed>");
-const document = parseXmlBytes(bytes);
-console.log(listElementsByQName(document, "entry").length);
+```txt
+<root><item/></root>
 ```
 
-## 3. Validate profile constraints
-
-```ts
-import { parseXml, validateXmlProfile } from "@ismail-elkorchi/xml-parser";
-
-const document = parseXml("<invoice><line amount=\"10\"/></invoice>");
-const result = validateXmlProfile(document, {
-  expectedRootQName: "invoice",
-  requiredElementQNames: ["line"],
-  requiredAttributesByElementQName: {
-    line: ["amount"]
-  }
-});
-console.log(result.ok);
-```
-
-## 4. Run bundled examples
+## Step 3: Run examples
 
 ```bash
 npm run examples:run
 ```
+
+What you get:
+- Confirmation that package examples run in your local environment.

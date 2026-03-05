@@ -1,31 +1,37 @@
 # API Overview
 
-This page tracks exported functions from `src/mod.ts`.
+All exported runtime entrypoints from `src/mod.ts`.
 
 ## Parsing and serialization
-- `parseXml`
-- `parseXmlBytes`
-- `parseXmlStream`
-- `tokenizeXml`
-- `serializeXml`
-- `getParseErrorSpecRef`
+- `XmlBudgetExceededError`
+- `getParseErrorSpecRef(parseErrorId)`
+- `parseXml(input, options?)`
+- `parseXmlBytes(input, options?)`
+- `parseXmlStream(stream, options?)`
+- `tokenizeXml(input, options?)`
+- `serializeXml(documentOrNode)`
 
 ## Query and traversal
-- `iterateElements`
-- `findFirstElementByQName`
-- `listElementsByQName`
-- `listElementsByAttribute`
-- `listElementsByNamespace`
-- `listTextNodes`
+- `iterateElements(documentOrNode)`
+- `findFirstElementByQName(documentOrNode, qName)`
+- `listElementsByQName(documentOrNode, qName)`
+- `listElementsByAttribute(documentOrNode, name, value?)`
+- `listElementsByNamespace(documentOrNode, namespaceUri)`
+- `listTextNodes(documentOrNode)`
 
 ## Validation and diagnostics
-- `validateXmlProfile`
-- `createXmlReplayContract`
-- `verifyXmlReplayContract`
+- `validateXmlProfile(document, profile)`
+- `createXmlReplayContract(document, options?)`
+- `verifyXmlReplayContract(contract, options?)`
 
-## Canonicalization and signature helpers
-- `canonicalizeXml`
-- `computeCanonicalSha256`
-- `verifyCanonicalSha256`
-- `signCanonicalXml`
-- `verifyCanonicalXmlSignature`
+## Canonicalization and signatures
+- `canonicalizeXml(input)`
+- `computeCanonicalSha256(input)`
+- `verifyCanonicalSha256(input, expectedDigest)`
+- `signCanonicalXml(input, signer)`
+- `verifyCanonicalXmlSignature(input, signature, verifier)`
+
+## Related
+- [Options](./options.md)
+- [Error model](./error-model.md)
+- [Canonicalization and signatures](./canonicalization.md)
