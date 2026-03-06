@@ -290,6 +290,18 @@ export function validateXmlProfile(
  *
  * @param input XML document or root element.
  * @returns Canonical XML string.
+ *
+ * Constraint notes:
+ * - Attribute order is normalized deterministically.
+ * - Digest/signature helpers rely on this canonical output.
+ *
+ * @example
+ * ```ts
+ * import { canonicalizeXml, parseXml } from "./mod.ts";
+ *
+ * const doc = parseXml("<root b=\"2\" a=\"1\"/>");
+ * console.log(canonicalizeXml(doc));
+ * ```
  */
 export function canonicalizeXml(input: CanonicalInput): string {
   return canonicalizeXmlInternal(input as Parameters<typeof canonicalizeXmlInternal>[0]);

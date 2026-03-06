@@ -1,6 +1,6 @@
 # @ismail-elkorchi/xml-parser
 
-Deterministic XML parsing and utility APIs for automation across Node, Deno, Bun, and browser smoke paths.
+Deterministic XML parsing with namespaces, canonicalization, and safe defaults across Node, Deno, Bun, and browsers.
 
 No runtime dependencies: this package ships with zero runtime dependencies.
 
@@ -97,6 +97,8 @@ Runtime compatibility matrix:
 | Deno | Supported |
 | Bun | Supported |
 | Browser (evergreen) | Supported |
+
+The Node.js package surface is verified against Node 20, 22, and 24.
 
 ## Security and Safety Notes
 
