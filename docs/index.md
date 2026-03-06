@@ -1,6 +1,6 @@
 # XML Parser Docs
 
-`@ismail-elkorchi/xml-parser` provides deterministic XML parsing, query helpers, canonicalization, and validation utilities.
+`@ismail-elkorchi/xml-parser` provides XML parsing with namespaces, canonicalization, validation helpers, and safe DTD defaults.
 
 ## Tutorial
 - [First parse success](./tutorial/first-parse.md)

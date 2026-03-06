@@ -2,7 +2,7 @@
   "name": "@ismail-elkorchi/xml-parser",
   "version": "0.1.1",
   "type": "module",
-  "description": "Deterministic XML parser with namespaces, canonicalization, and safe DTD defaults for Node, Deno, Bun, and browsers.",
+  "description": "XML parser with namespaces, canonicalization, validation helpers, and safe DTD defaults.",
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"

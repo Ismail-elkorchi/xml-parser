@@ -1,5 +1,5 @@
 /**
- * Deno/JSR entrypoint for deterministic XML parsing, validation, and canonicalization.
+ * Deno/JSR entrypoint for XML parsing with namespaces, canonicalization, validation helpers, and safe DTD defaults.
  *
  * Quickstart:
  * @example
