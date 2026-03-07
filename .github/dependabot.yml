@@ -1,5 +1,7 @@
 version: 2
 updates:
+  # Version updates are controlled by groups and open-pull-requests-limit.
+  # Security updates are a separate channel managed by GitHub.
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -8,40 +10,48 @@ updates:
       time: "05:00"
       timezone: "Africa/Casablanca"
     open-pull-requests-limit: 1
+    rebase-strategy: disabled
     labels:
       - dependencies
       - security
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 7
     groups:
-      npm-compatible-weekly:
+      npm-minor-patch:
         patterns:
           - "*"
         update-types:
-          - "minor"
-          - "patch"
-    ignore:
-      - dependency-name: "*"
+          - minor
+          - patch
+      npm-major:
+        patterns:
+          - "*"
         update-types:
-          - "version-update:semver-major"
+          - major
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
       day: monday
-      time: "06:00"
+      time: "07:00"
       timezone: "Africa/Casablanca"
     open-pull-requests-limit: 1
+    rebase-strategy: disabled
     labels:
       - dependencies
       - security
     groups:
-      actions-compatible-monthly:
+      actions-minor-patch:
         patterns:
           - "*"
         update-types:
-          - "minor"
-          - "patch"
-    ignore:
-      - dependency-name: "*"
+          - minor
+          - patch
+      actions-major:
+        patterns:
+          - "*"
         update-types:
-          - "version-update:semver-major"
+          - major
