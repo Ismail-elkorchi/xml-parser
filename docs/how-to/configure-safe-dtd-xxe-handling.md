@@ -1,7 +1,14 @@
 # Configure Safe DTD And XXE Handling
 
-Goal: verify that DTD and external entities stay blocked for untrusted input.
+## Goal
+Verify that DTDs, external entities, and unsafe entity expansion paths stay
+blocked for untrusted XML by default.
 
+## Prerequisites
+- `@ismail-elkorchi/xml-parser` installed
+- Strict mode enabled for untrusted XML
+
+## Copy/paste
 ```ts
 import { parseXml } from "@ismail-elkorchi/xml-parser";
 
@@ -27,6 +34,21 @@ console.log(errorIds.includes("disallowed-dtd"));
 console.log(errorIds.includes("disallowed-external-entity"));
 ```
 
-Expected output:
-- `true`
-- `true`
+## Expected output
+```txt
+true
+true
+```
+
+## Common failure modes
+- `strict: false` is used for untrusted input, which weakens the parser’s safe
+  default posture.
+- Budgets are left unset, so hostile documents can consume more resources than
+  intended even when XXE stays blocked.
+- Signature or canonicalization workflows assume external entities will be
+  resolved; this parser treats that as unsupported/untrusted behavior.
+
+## Related reference
+- [Options](../reference/options.md)
+- [Error model](../reference/error-model.md)
+- [Canonicalization and signatures](../reference/canonicalization.md)

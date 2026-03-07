@@ -1,6 +1,8 @@
 # @ismail-elkorchi/xml-parser
 
-Deterministic XML parsing and utility APIs for automation across Node, Deno, Bun, and browser smoke paths.
+XML parser with namespaces, canonicalization, validation helpers, and safe DTD defaults.
+
+Supports Node, Deno, Bun, and browsers with explicit XML parse budgets.
 
 No runtime dependencies: this package ships with zero runtime dependencies.
 
@@ -98,6 +100,8 @@ Runtime compatibility matrix:
 | Bun | Supported |
 | Browser (evergreen) | Supported |
 
+The Node.js package surface is verified against Node 20, 22, and 24.
+
 ## Security and Safety Notes
 
 XML parsing is not a trust boundary by itself.
@@ -107,6 +111,6 @@ XML parsing is not a trust boundary by itself.
 
 ## Documentation
 
-- [Docs index](./docs/index.md)
-- [First parse success tutorial](./docs/tutorial/first-parse.md)
-- [Options reference](./docs/reference/options.md)
+- [Docs index](https://github.com/Ismail-elkorchi/xml-parser/blob/main/docs/index.md)
+- [First parse success tutorial](https://github.com/Ismail-elkorchi/xml-parser/blob/main/docs/tutorial/first-parse.md)
+- [Options reference](https://github.com/Ismail-elkorchi/xml-parser/blob/main/docs/reference/options.md)
