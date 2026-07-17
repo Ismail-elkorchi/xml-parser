@@ -20,6 +20,7 @@
 import {
   canonicalizeXml as canonicalizeXmlInternal,
   computeCanonicalSha256 as computeCanonicalSha256Internal,
+  getParseErrorSpecRef,
   parseXml as parseXmlInternal,
   parseXmlBytes as parseXmlBytesInternal,
   parseXmlStream as parseXmlStreamInternal,
@@ -28,154 +29,56 @@ import {
   tokenizeXml as tokenizeXmlInternal,
   validateXmlProfile as validateXmlProfileInternal,
   verifyCanonicalSha256 as verifyCanonicalSha256Internal,
-  verifyCanonicalXmlSignature as verifyCanonicalXmlSignatureInternal
+  verifyCanonicalXmlSignature as verifyCanonicalXmlSignatureInternal,
+  XmlBudgetExceededError,
+  XmlDecodingError
+} from "../src/mod.ts";
+import type {
+  CanonicalInput,
+  XmlDocument,
+  XmlElementNode,
+  XmlNode,
+  XmlParseOptions,
+  XmlToken,
+  XmlValidationProfile,
+  XmlValidationResult
 } from "../src/mod.ts";
 
-/**
- * Parse budget controls for XML parsing.
- */
-export interface XmlParseBudgets {
-  /** Maximum bytes accepted by string/byte parse entrypoints. */
-  readonly maxInputBytes?: number;
-  /** Maximum bytes consumed from stream parse entrypoints. */
-  readonly maxStreamBytes?: number;
-  /** Maximum XML node count. */
-  readonly maxNodes?: number;
-  /** Maximum XML nesting depth. */
-  readonly maxDepth?: number;
-  /** Maximum attributes allowed per element node. */
-  readonly maxAttributesPerElement?: number;
-  /** Maximum text payload bytes accumulated by parser text nodes. */
-  readonly maxTextBytes?: number;
-  /** Maximum non-fatal parse errors collected before budget failure. */
-  readonly maxErrors?: number;
-  /** Maximum parse runtime in milliseconds. */
-  readonly maxTimeMs?: number;
-}
+export type {
+  CanonicalInput,
+  XmlAttribute,
+  XmlDocument,
+  XmlElementNode,
+  XmlNode,
+  XmlParseBudgets,
+  XmlParseError,
+  XmlParseOptions,
+  XmlSpan,
+  XmlTextNode,
+  XmlToken,
+  XmlTokenAttribute,
+  XmlValidationIssue,
+  XmlValidationProfile,
+  XmlValidationResult
+} from "../src/mod.ts";
 
-/**
- * Parse options accepted by XML parse entrypoints.
- */
-export interface XmlParseOptions {
-  /** When `true` (default), enforce strict XML parsing behavior. */
-  readonly strict?: boolean;
-  /** Optional budget controls for parse safety. */
-  readonly budgets?: XmlParseBudgets;
-}
-
-/**
- * Validation profile for `validateXmlProfile`.
- */
-export interface XmlValidationProfile {
-  /** Expected QName for the root element. */
-  readonly expectedRootQName?: string;
-  /** Element QNames that must appear at least once. */
-  readonly requiredElementQNames?: readonly string[];
-  /** Required attribute names keyed by element QName. */
-  readonly requiredAttributesByElementQName?: Readonly<Record<string, readonly string[]>>;
-  /** Maximum element occurrences keyed by element QName. */
-  readonly maxOccurrencesByElementQName?: Readonly<Record<string, number>>;
-}
-
-/**
- * Validation issue reported by `validateXmlProfile`.
- */
-export interface XmlValidationIssue {
-  /** Stable machine-readable validation issue code. */
-  readonly code: string;
-  /** Human-readable issue summary. */
-  readonly message: string;
-  /** Optional QName related to this issue. */
-  readonly qName?: string;
-  /** Optional element QName related to this issue. */
-  readonly elementQName?: string;
-  /** Optional attribute QName related to this issue. */
-  readonly attributeQName?: string;
-  /** Optional node id associated with this issue. */
-  readonly nodeId?: number;
-}
-
-/**
- * Structured validation result returned by `validateXmlProfile`.
- */
-export interface XmlValidationResult {
-  /** Whether profile validation succeeded without issues. */
-  readonly ok: boolean;
-  /** Validation issues emitted by the profile check. */
-  readonly issues: readonly XmlValidationIssue[];
-}
-
-/**
- * Parsed XML document returned by XML parse entrypoints.
- */
-export interface XmlDocument {
-  /** Top-level document discriminator. */
-  readonly kind: string;
-  /** Optional root element node, when parse succeeds far enough to produce one. */
-  readonly root?: XmlNode | null;
-  /** Optional non-fatal parse diagnostics. */
-  readonly errors?: readonly XmlParseError[];
-}
-
-/**
- * XML node type accepted by `serializeXml`.
- */
-export interface XmlNode {
-  /** Node category (element, text, comment, etc.). */
-  readonly kind: string;
-  /** Qualified name for element-like nodes. */
-  readonly qName?: string;
-  /** Text payload for text/comment-like nodes. */
-  readonly value?: string;
-  /** Child nodes in source order. */
-  readonly children?: readonly XmlNode[];
-}
-
-/**
- * XML token emitted by `tokenizeXml`.
- */
-export interface XmlToken {
-  /** Token category from XML tokenization. */
-  readonly kind: string;
-  /** Optional qualified name for tag-like tokens. */
-  readonly qName?: string;
-  /** Optional token payload for text-like tokens. */
-  readonly value?: string;
-}
-
-/**
- * Canonicalization input accepted by canonicalization/signature APIs.
- */
-export type CanonicalInput = XmlDocument | XmlNode | string;
-
-/**
- * Structured parse issue surfaced by XML parse APIs.
- */
-export interface XmlParseError {
-  /** Stable parser error code. */
-  readonly code: string;
-  /** Human-readable error description. */
-  readonly message: string;
-}
+export { XmlBudgetExceededError, XmlDecodingError, getParseErrorSpecRef };
 
 /**
  * Parses XML source text into a deterministic document tree.
  *
  * @param input XML source text.
- * @param options Parse strictness and budget controls.
+ * @param options Parse budget controls.
  * @returns Parsed XML document with root, tokens, and diagnostics.
  * @throws {Error} When parsing fails fatally or configured budgets are exceeded.
  *
- * Security and limits:
- * - Keep `strict` enabled for untrusted input.
- * - Set explicit budgets to bound parser work.
+ * Security and limits: set explicit budgets to bound parser work.
  *
  * @example
  * ```ts
  * import { parseXml } from "./mod.ts";
  *
  * const doc = parseXml("<root><item id=\"1\"/></root>", {
- *   strict: true,
  *   budgets: { maxInputBytes: 8_192, maxNodes: 1_024, maxDepth: 64, maxErrors: 16 }
  * });
  *
@@ -184,26 +87,26 @@ export interface XmlParseError {
  * ```
  */
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {
-  return parseXmlInternal(input, options as Parameters<typeof parseXmlInternal>[1]);
+  return parseXmlInternal(input, options);
 }
 
 /**
  * Parses byte-oriented XML input.
  *
  * @param input Raw XML bytes.
- * @param options Parse strictness and budget controls.
+ * @param options Parse budget controls.
  * @returns Parsed XML document.
  * @throws {Error} When parsing fails or configured budgets are exceeded.
  */
 export function parseXmlBytes(input: Uint8Array, options: XmlParseOptions = {}): XmlDocument {
-  return parseXmlBytesInternal(input, options as Parameters<typeof parseXmlBytesInternal>[1]);
+  return parseXmlBytesInternal(input, options);
 }
 
 /**
  * Parses XML bytes from a readable stream.
  *
  * @param stream XML byte stream.
- * @param options Parse strictness and budget controls.
+ * @param options Parse budget controls.
  * @returns Promise resolving to parsed XML document.
  * @throws {Error} When stream reading/parsing fails or budgets are exceeded.
  *
@@ -230,7 +133,7 @@ export async function parseXmlStream(
   stream: ReadableStream<Uint8Array>,
   options: XmlParseOptions = {}
 ): Promise<XmlDocument> {
-  return parseXmlStreamInternal(stream, options as Parameters<typeof parseXmlStreamInternal>[1]);
+  return parseXmlStreamInternal(stream, options);
 }
 
 /**
@@ -240,7 +143,7 @@ export async function parseXmlStream(
  * @returns Deterministic XML serialization output.
  */
 export function serializeXml(input: XmlDocument | XmlNode): string {
-  return serializeXmlInternal(input as Parameters<typeof serializeXmlInternal>[0]);
+  return serializeXmlInternal(input);
 }
 
 /**
@@ -252,7 +155,7 @@ export function serializeXml(input: XmlDocument | XmlNode): string {
  * @throws {Error} When tokenization fails or budgets are exceeded.
  */
 export function tokenizeXml(input: string, options: XmlParseOptions = {}): readonly XmlToken[] {
-  return tokenizeXmlInternal(input, options as Parameters<typeof tokenizeXmlInternal>[1]);
+  return tokenizeXmlInternal(input, options);
 }
 
 /**
@@ -276,13 +179,10 @@ export function tokenizeXml(input: string, options: XmlParseOptions = {}): reado
  * ```
  */
 export function validateXmlProfile(
-  document: XmlDocument | XmlNode,
+  document: XmlDocument | XmlElementNode,
   profile: XmlValidationProfile
 ): XmlValidationResult {
-  return validateXmlProfileInternal(
-    document as Parameters<typeof validateXmlProfileInternal>[0],
-    profile as Parameters<typeof validateXmlProfileInternal>[1]
-  ) as XmlValidationResult;
+  return validateXmlProfileInternal(document, profile);
 }
 
 /**
@@ -304,7 +204,7 @@ export function validateXmlProfile(
  * ```
  */
 export function canonicalizeXml(input: CanonicalInput): string {
-  return canonicalizeXmlInternal(input as Parameters<typeof canonicalizeXmlInternal>[0]);
+  return canonicalizeXmlInternal(input);
 }
 
 /**
@@ -315,7 +215,7 @@ export function canonicalizeXml(input: CanonicalInput): string {
  * @throws {Error} When WebCrypto `SubtleCrypto` is unavailable.
  */
 export async function computeCanonicalSha256(input: CanonicalInput): Promise<string> {
-  return computeCanonicalSha256Internal(input as Parameters<typeof computeCanonicalSha256Internal>[0]);
+  return computeCanonicalSha256Internal(input);
 }
 
 /**
@@ -326,10 +226,7 @@ export async function computeCanonicalSha256(input: CanonicalInput): Promise<str
  * @returns `true` when digest matches, otherwise `false`.
  */
 export async function verifyCanonicalSha256(input: CanonicalInput, expectedHex: string): Promise<boolean> {
-  return verifyCanonicalSha256Internal(
-    input as Parameters<typeof verifyCanonicalSha256Internal>[0],
-    expectedHex
-  );
+  return verifyCanonicalSha256Internal(input, expectedHex);
 }
 
 /**
@@ -346,11 +243,7 @@ export async function signCanonicalXml(
   privateKey: CryptoKey,
   algorithm: AlgorithmIdentifier = "RSASSA-PKCS1-v1_5"
 ): Promise<Uint8Array> {
-  return signCanonicalXmlInternal(
-    input as Parameters<typeof signCanonicalXmlInternal>[0],
-    privateKey,
-    algorithm
-  );
+  return signCanonicalXmlInternal(input, privateKey, algorithm);
 }
 
 /**
@@ -369,10 +262,5 @@ export async function verifyCanonicalXmlSignature(
   publicKey: CryptoKey,
   algorithm: AlgorithmIdentifier = "RSASSA-PKCS1-v1_5"
 ): Promise<boolean> {
-  return verifyCanonicalXmlSignatureInternal(
-    input as Parameters<typeof verifyCanonicalXmlSignatureInternal>[0],
-    signature,
-    publicKey,
-    algorithm
-  );
+  return verifyCanonicalXmlSignatureInternal(input, signature, publicKey, algorithm);
 }

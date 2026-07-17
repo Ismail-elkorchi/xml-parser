@@ -10,9 +10,7 @@ const reportPath = new URL("../../../reports/oracle-independent.json", import.me
 
 const NON_GOAL_PARSE_ERROR_IDS = new Set([
   "disallowed-dtd",
-  "disallowed-external-entity",
-  "unsupported-declaration",
-  "unsupported-processing-instruction"
+  "disallowed-external-entity"
 ]);
 
 function pythonCheckWellFormed(xmlSource) {
@@ -123,8 +121,15 @@ async function main() {
   const pythonBinary = await fs.readFile(fingerprint.executablePath);
   const executableSha256 = sha256Hex(pythonBinary);
 
-  const comparableCases = conformanceCases.filter((entry) => !entry.options);
-  const excludedCaseIds = conformanceCases.filter((entry) => entry.options).map((entry) => entry.id);
+  const comparableCases = conformanceCases.filter(
+    (entry) => !entry.options && entry.oracleComparable !== false
+  );
+  const excludedCases = conformanceCases
+    .filter((entry) => entry.options || entry.oracleComparable === false)
+    .map((entry) => ({
+      id: entry.id,
+      reason: entry.oracleExclusionReason ?? (entry.options ? "parser budget case" : "not comparable")
+    }));
 
   const mismatches = [];
   for (const entry of comparableCases) {
@@ -163,8 +168,8 @@ async function main() {
       executableSha256
     },
     compared: comparableCases.length,
-    excludedCount: excludedCaseIds.length,
-    excludedCaseIds,
+    excludedCount: excludedCases.length,
+    excludedCases,
     nonGoalParseErrorIds: [...NON_GOAL_PARSE_ERROR_IDS],
     mismatches
   };

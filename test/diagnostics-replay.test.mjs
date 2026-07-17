@@ -11,7 +11,7 @@ test("replay contract is deterministic for stable input", () => {
   const contractB = createXmlReplayContract(SAMPLE, { maxEvents: 64 });
 
   assert.deepEqual(contractA, contractB);
-  assert.equal(contractA.contract, "xml-replay-v1");
+  assert.equal(contractA.contract, "xml-replay-v2");
   assert.equal(contractA.events.some((entry) => entry.kind === "token"), true);
   assert.equal(contractA.events.some((entry) => entry.kind === "tree-node"), true);
   assert.equal(contractA.events.some((entry) => entry.kind === "summary"), true);

@@ -26,3 +26,5 @@ console.log(document.kind);
 
 Expected output:
 - Stable parse result independent of chunk boundaries.
+- The reader lock is released after parsing or failure.
+- Malformed UTF-8 rejects with `XmlDecodingError`; bytes are never silently replaced.

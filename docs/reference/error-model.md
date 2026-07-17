@@ -10,6 +10,14 @@ Payload fields:
 - `limit`: configured value
 - `actual`: observed value
 
+## `XmlDecodingError`
+
+Thrown by byte and stream APIs when their input is not valid UTF-8.
+
+Payload fields:
+- `code`: `"INVALID_UTF8"`
+- `encoding`: `"utf-8"`
+
 ## Parse errors
 
 Parse APIs return deterministic parse errors with stable `parseErrorId` values.

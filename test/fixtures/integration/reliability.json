@@ -114,7 +114,7 @@
       "id": "doctype-entity-recovery-shape",
       "xml": "<!DOCTYPE root [<!ENTITY x \"abc\">]><root>&x;</root>",
       "expectedRoot": "root",
-      "expectedErrorCount": 4,
+      "expectedErrorCount": 2,
       "expectedReparseErrorCount": 0,
       "expectedTextNodeCount": 1,
       "expectedQNameCounts": {

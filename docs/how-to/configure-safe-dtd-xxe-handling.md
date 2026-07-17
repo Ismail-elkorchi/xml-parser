@@ -6,7 +6,7 @@ blocked for untrusted XML by default.
 
 ## Prerequisites
 - `@ismail-elkorchi/xml-parser` installed
-- Strict mode enabled for untrusted XML
+- Parse budgets selected for untrusted XML
 
 ## Copy/paste
 ```ts
@@ -20,7 +20,6 @@ const untrusted = `
 `;
 
 const document = parseXml(untrusted, {
-  strict: true,
   budgets: {
     maxInputBytes: 16_384,
     maxNodes: 1_024,
@@ -41,8 +40,8 @@ true
 ```
 
 ## Common failure modes
-- `strict: false` is used for untrusted input, which weakens the parser’s safe
-  default posture.
+- Parse diagnostics are ignored after DTD or external-entity declarations are
+  rejected.
 - Budgets are left unset, so hostile documents can consume more resources than
   intended even when XXE stays blocked.
 - Signature or canonicalization workflows assume external entities will be

@@ -1,28 +1,43 @@
 import type { XmlDocument, XmlElementNode } from "../internal/types.js";
 
+/** Structural checks applied after XML parsing. */
 export interface XmlValidationProfile {
+  /** Required document-element qualified name. */
   expectedRootQName?: string;
+  /** Qualified element names that must occur. */
   requiredElementQNames?: string[];
+  /** Required attributes keyed by element qualified name. */
   requiredAttributesByElementQName?: Record<string, string[]>;
+  /** Maximum occurrences keyed by element qualified name. */
   maxOccurrencesByElementQName?: Record<string, number>;
 }
 
+/** One deterministic structural validation issue. */
 export interface XmlValidationIssue {
+  /** Stable validation issue category. */
   code:
     | "root-qname-mismatch"
     | "missing-element"
     | "missing-attribute"
     | "max-occurrences-exceeded"
     | "no-root";
+  /** Human-readable issue description. */
   message: string;
+  /** Related qualified name, when applicable. */
   qName?: string;
+  /** Related element qualified name, when applicable. */
   elementQName?: string;
+  /** Related attribute qualified name, when applicable. */
   attributeQName?: string;
+  /** Related parsed node identifier, when applicable. */
   nodeId?: number;
 }
 
+/** Result of applying an XML validation profile. */
 export interface XmlValidationResult {
+  /** Whether the document satisfies the profile. */
   ok: boolean;
+  /** Deterministic validation issues. */
   issues: XmlValidationIssue[];
 }
 

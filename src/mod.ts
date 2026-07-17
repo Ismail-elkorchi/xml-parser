@@ -1,7 +1,11 @@
-import { getParseErrorSpecRef, XmlBudgetExceededError } from "./internal/parse-errors.js";
-import { parseXmlBytesSource, parseXmlSource, parseXmlStreamSource } from "./internal/parser.js";
+import { getParseErrorSpecRef, XmlBudgetExceededError, XmlDecodingError } from "./internal/parse-errors.js";
+import {
+  parseXmlBytesSource,
+  parseXmlSource,
+  parseXmlStreamSource,
+  tokenizeXmlSource
+} from "./internal/parser.js";
 import { serializeXmlDocument } from "./internal/serializer.js";
-import { tokenizeXml as tokenize } from "./internal/tokenizer.js";
 import {
   canonicalizeXml,
   computeCanonicalSha256,
@@ -23,7 +27,6 @@ import type { XmlDocument, XmlNode, XmlParseOptions, XmlToken } from "./public/t
 
 export type {
   XmlAttribute,
-  XmlBudgetExceededDetails,
   XmlDocument,
   XmlElementNode,
   XmlNode,
@@ -37,12 +40,13 @@ export type {
   XmlReplayVerificationResult,
   XmlSpan,
   XmlTextNode,
-  XmlToken
+  XmlToken,
+  XmlTokenAttribute
 } from "./public/types.js";
 export type { XmlValidationIssue, XmlValidationProfile, XmlValidationResult } from "./public/schema.js";
 export type { CanonicalInput } from "./public/canonical.js";
 
-export { XmlBudgetExceededError, getParseErrorSpecRef };
+export { XmlBudgetExceededError, XmlDecodingError, getParseErrorSpecRef };
 export {
   findFirstElementByQName,
   iterateElements,
@@ -64,7 +68,7 @@ export {
  * Parses a UTF-16 JavaScript string into a deterministic XML document tree.
  *
  * @param input XML source text.
- * @param options Parse budgets and strictness controls.
+ * @param options Parse budget controls.
  * @example
  * ```ts
  * const doc = parseXml("<root><item id=\"1\"/></root>");
@@ -79,7 +83,7 @@ export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocum
  * Parses UTF-8/byte-oriented XML input into a deterministic XML document tree.
  *
  * @param input Raw XML bytes.
- * @param options Parse budgets and strictness controls.
+ * @param options Parse budget controls.
  * @example
  * ```ts
  * const bytes = new TextEncoder().encode("<root><item/></root>");
@@ -95,7 +99,7 @@ export function parseXmlBytes(input: Uint8Array, options: XmlParseOptions = {}):
  * Parses a byte stream into a deterministic XML document tree.
  *
  * @param stream Stream of UTF-8 XML bytes.
- * @param options Parse budgets and strictness controls.
+ * @param options Parse budget controls.
  * @example
  * ```ts
  * const stream = new ReadableStream({
@@ -141,9 +145,5 @@ export function serializeXml(input: XmlDocument | XmlNode): string {
  * ```
  */
 export function tokenizeXml(input: string, options: XmlParseOptions = {}): XmlToken[] {
-  const source = input;
-  const tokens = tokenize(source, {
-    maxErrors: options.budgets?.maxErrors ?? 1_000
-  });
-  return tokens.tokens;
+  return tokenizeXmlSource(input, options);
 }

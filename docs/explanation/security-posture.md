@@ -5,4 +5,5 @@ Security defaults are conservative:
 - Parse budgets are first-class controls.
 - Parser APIs do not execute scripts or fetch remote resources.
 
-For untrusted input, keep strict mode enabled and always configure budgets.
+XML 1.0 well-formedness is unconditional. For untrusted input, always configure
+budgets and reject documents that contain parse diagnostics.

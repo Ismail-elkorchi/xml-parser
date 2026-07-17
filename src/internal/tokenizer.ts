@@ -1,116 +1,75 @@
+import type { BudgetCheck } from "./budgets.js";
 import { decodeEntities } from "./entities.js";
-import { createParseError } from "./parse-errors.js";
+import { XmlBudgetExceededError, createParseError } from "./parse-errors.js";
 import type { XmlParseError, XmlToken, XmlTokenAttribute } from "./types.js";
+import {
+  isValidXmlQName,
+  isXmlCharacter,
+  isXmlWhitespace,
+  normalizeLiteralAttributeWhitespace,
+  readXmlName
+} from "./xml-syntax.js";
 
 interface TokenizeOptions {
-  maxErrors: number;
+  readonly maxErrors: number;
+  readonly checkTime: BudgetCheck;
 }
 
 export interface TokenizeResult {
-  tokens: XmlToken[];
-  errors: XmlParseError[];
+  readonly tokens: XmlToken[];
+  readonly errors: XmlParseError[];
 }
 
-function isWhitespace(code: number): boolean {
-  return code === 9 || code === 10 || code === 13 || code === 32;
-}
-
-function isNameStart(code: number): boolean {
-  return (
-    (code >= 65 && code <= 90) ||
-    (code >= 97 && code <= 122) ||
-    code === 95 ||
-    code === 58
-  );
-}
-
-function isNameChar(code: number): boolean {
-  return isNameStart(code) || (code >= 48 && code <= 57) || code === 45 || code === 46;
-}
-
-function skipWhitespace(source: string, start: number): number {
-  let cursor = start;
-  while (cursor < source.length && isWhitespace(source.charCodeAt(cursor))) {
-    cursor += 1;
-  }
-  return cursor;
-}
-
-function readName(source: string, start: number): { value: string; end: number } | null {
-  if (start >= source.length || !isNameStart(source.charCodeAt(start))) {
-    return null;
-  }
-
-  let cursor = start + 1;
-  while (cursor < source.length && isNameChar(source.charCodeAt(cursor))) {
-    cursor += 1;
-  }
-
-  return {
-    value: source.slice(start, cursor),
-    end: cursor
-  };
-}
-
-function parseXmlDeclaration(raw: string): { version: string | null; encoding: string | null } {
-  const versionMatch = /\bversion\s*=\s*["']([^"']+)["']/i.exec(raw);
-  const encodingMatch = /\bencoding\s*=\s*["']([^"']+)["']/i.exec(raw);
-  return {
-    version: versionMatch?.[1] ?? null,
-    encoding: encodingMatch?.[1] ?? null
-  };
-}
-
-function tryPushError(
-  errors: XmlParseError[],
-  source: string,
-  parseErrorId: string,
-  message: string,
-  offset: number,
-  maxErrors: number
-): boolean {
-  if (errors.length >= maxErrors) {
-    return false;
-  }
-  errors.push(createParseError(parseErrorId, message, source, offset));
-  return true;
+interface XmlDeclarationFields {
+  readonly valid: boolean;
+  readonly version: string | null;
+  readonly encoding: string | null;
+  readonly standalone: "yes" | "no" | null;
 }
 
 export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeResult {
   const tokens: XmlToken[] = [];
   const errors: XmlParseError[] = [];
   let cursor = 0;
-  let seenContent = false;
 
-  const pushError = (parseErrorId: string, message: string, offset: number): boolean =>
-    tryPushError(errors, source, parseErrorId, message, offset, options.maxErrors);
+  const pushError = (parseErrorId: string, message: string, offset: number): void => {
+    if (errors.length >= options.maxErrors) {
+      throw new XmlBudgetExceededError("maxErrors", options.maxErrors, errors.length + 1);
+    }
+    errors.push(createParseError(parseErrorId, message, source, offset, options.checkTime));
+  };
+
+  validateXmlCharacters(source, pushError, options.checkTime);
+
+  const emitText = (rawText: string, start: number, end: number): void => {
+    if (rawText.includes("]]>") ) {
+      pushError(
+        "cdata-close-in-character-data",
+        "The CDATA closing delimiter is not allowed in character data",
+        start + rawText.indexOf("]]>")
+      );
+    }
+    tokens.push({
+      kind: "text",
+      value: decodeEntities(rawText, start, pushError, options.checkTime),
+      start,
+      end
+    });
+  };
 
   while (cursor < source.length) {
+    options.checkTime();
     const lt = source.indexOf("<", cursor);
     if (lt < 0) {
       const rawText = source.slice(cursor);
       if (rawText.length > 0) {
-        tokens.push({
-          kind: "text",
-          value: decodeEntities(rawText, source, cursor, errors),
-          start: cursor,
-          end: source.length
-        });
+        emitText(rawText, cursor, source.length);
       }
       break;
     }
 
     if (lt > cursor) {
-      const rawText = source.slice(cursor, lt);
-      tokens.push({
-        kind: "text",
-        value: decodeEntities(rawText, source, cursor, errors),
-        start: cursor,
-        end: lt
-      });
-      if (rawText.trim().length > 0) {
-        seenContent = true;
-      }
+      emitText(source.slice(cursor, lt), cursor, lt);
     }
 
     if (source.startsWith("<!--", lt)) {
@@ -119,9 +78,13 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
         pushError("malformed-comment", "Unterminated comment", lt);
         break;
       }
+      const value = source.slice(lt + 4, end);
+      if (value.includes("--") || value.endsWith("-")) {
+        pushError("malformed-comment", "Comments must not contain -- or end with -", lt);
+      }
       tokens.push({
         kind: "comment",
-        value: source.slice(lt + 4, end),
+        value,
         start: lt,
         end: end + 3
       });
@@ -132,7 +95,7 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
     if (source.startsWith("<![CDATA[", lt)) {
       const end = source.indexOf("]]>", lt + 9);
       if (end < 0) {
-        pushError("malformed-cdata", "Unterminated CDATA", lt);
+        pushError("malformed-cdata", "Unterminated CDATA section", lt);
         break;
       }
       tokens.push({
@@ -142,7 +105,6 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
         end: end + 3
       });
       cursor = end + 3;
-      seenContent = true;
       continue;
     }
 
@@ -153,22 +115,42 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
         break;
       }
 
+      const target = readXmlName(source, lt + 2, options.checkTime);
+      if (target === null || (target.end < end && !isXmlWhitespace(source.charCodeAt(target.end)))) {
+        pushError("malformed-processing-instruction", "Processing instruction target is invalid", lt);
+        cursor = end + 2;
+        continue;
+      }
+
       const rawBody = source.slice(lt + 2, end);
-      if (rawBody.trim().startsWith("xml")) {
-        if (seenContent || lt !== 0) {
-          pushError("xml-declaration-not-at-start", "XML declaration must appear at start", lt);
+      if (target.value.toLowerCase() === "xml") {
+        if (target.value !== "xml") {
+          pushError(
+            "reserved-processing-instruction-target",
+            "Processing instruction target xml is reserved in every case combination",
+            lt
+          );
+          cursor = end + 2;
+          continue;
         }
-        const parsed = parseXmlDeclaration(rawBody);
+
+        if (lt !== 0) {
+          pushError("xml-declaration-not-at-start", "XML declaration must appear at the start", lt);
+        }
+        const declaration = parseXmlDeclaration(rawBody);
+        if (!declaration.valid) {
+          pushError("malformed-xml-declaration", "XML declaration syntax is invalid", lt);
+        }
         tokens.push({
           kind: "xml-declaration",
           raw: rawBody,
           start: lt,
           end: end + 2,
-          version: parsed.version,
-          encoding: parsed.encoding
+          version: declaration.version,
+          encoding: declaration.encoding,
+          standalone: declaration.standalone
         });
       } else {
-        pushError("unsupported-processing-instruction", "Processing instructions are not supported", lt);
         tokens.push({
           kind: "processing-instruction",
           value: rawBody,
@@ -181,18 +163,16 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
     }
 
     if (source.startsWith("<!DOCTYPE", lt) || source.startsWith("<!ENTITY", lt)) {
-      const end = source.indexOf(">", lt + 2);
+      const end = findDeclarationEnd(source, lt + 2, options.checkTime);
       if (end < 0) {
         pushError("malformed-declaration", "Unterminated declaration", lt);
         break;
       }
       const body = source.slice(lt + 2, end);
-      const hasExternalRef = /\bSYSTEM\b|\bPUBLIC\b/i.test(body);
-      pushError("disallowed-dtd", "DTD declarations are disabled", lt);
-      if (hasExternalRef) {
+      pushError("disallowed-dtd", "DTD and entity declarations are disabled", lt);
+      if (/\bSYSTEM\b|\bPUBLIC\b/.test(body)) {
         pushError("disallowed-external-entity", "External entities are disabled", lt);
       }
-
       tokens.push({
         kind: "doctype",
         value: body,
@@ -204,27 +184,27 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
     }
 
     if (source.startsWith("</", lt)) {
-      const innerStart = lt + 2;
-      if (isWhitespace(source.charCodeAt(innerStart))) {
+      const nameStart = lt + 2;
+      if (isXmlWhitespace(source.charCodeAt(nameStart))) {
         pushError("malformed-end-tag", "Whitespace after </ is not allowed", lt);
-        const gt = source.indexOf(">", innerStart);
-        cursor = gt < 0 ? source.length : gt + 1;
+        cursor = recoverMarkupEnd(source, nameStart, options.checkTime);
         continue;
       }
 
-      let inner = innerStart;
-      const name = readName(source, inner);
-      if (!name) {
+      const name = readXmlName(source, nameStart, options.checkTime);
+      if (name === null) {
         pushError("malformed-end-tag", "Invalid end tag name", lt);
-        const gt = source.indexOf(">", lt + 2);
-        cursor = gt < 0 ? source.length : gt + 1;
+        cursor = recoverMarkupEnd(source, nameStart, options.checkTime);
         continue;
       }
-      inner = skipWhitespace(source, name.end);
-      if (source.charCodeAt(inner) !== 62) {
+      if (!isValidXmlQName(name.value)) {
+        pushError("malformed-qualified-name", `Invalid qualified name: ${name.value}`, nameStart);
+      }
+
+      const inner = skipWhitespace(source, name.end, options.checkTime);
+      if (source.charCodeAt(inner) !== 0x3e) {
         pushError("malformed-end-tag", "Missing > for end tag", lt);
-        const gt = source.indexOf(">", inner);
-        cursor = gt < 0 ? source.length : gt + 1;
+        cursor = recoverMarkupEnd(source, inner, options.checkTime);
         continue;
       }
       tokens.push({
@@ -237,62 +217,79 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
       continue;
     }
 
-    if (source.charCodeAt(lt + 1) !== 33 && source.charCodeAt(lt + 1) !== 47 && source.charCodeAt(lt + 1) !== 63) {
-      let inner = skipWhitespace(source, lt + 1);
-      const name = readName(source, inner);
-      if (!name) {
+    const markupCode = source.charCodeAt(lt + 1);
+    if (markupCode !== 0x21 && markupCode !== 0x2f && markupCode !== 0x3f) {
+      const nameStart = lt + 1;
+      const name = readXmlName(source, nameStart, options.checkTime);
+      if (name === null) {
         pushError("malformed-start-tag", "Invalid start tag name", lt);
-        const gt = source.indexOf(">", lt + 1);
-        cursor = gt < 0 ? source.length : gt + 1;
+        cursor = recoverMarkupEnd(source, nameStart, options.checkTime);
         continue;
       }
+      if (!isValidXmlQName(name.value)) {
+        pushError("malformed-qualified-name", `Invalid qualified name: ${name.value}`, nameStart);
+      }
 
-      inner = name.end;
+      let inner = name.end;
       const attributes: XmlTokenAttribute[] = [];
       const seenAttributes = new Set<string>();
       let selfClosing = false;
       let malformed = false;
+      let terminated = false;
 
       while (inner < source.length) {
-        inner = skipWhitespace(source, inner);
+        options.checkTime();
+        const beforeWhitespace = inner;
+        inner = skipWhitespace(source, inner, options.checkTime);
+        const hadWhitespace = inner > beforeWhitespace;
         const code = source.charCodeAt(inner);
 
-        if (code === 47 && source.charCodeAt(inner + 1) === 62) {
+        if (code === 0x2f && source.charCodeAt(inner + 1) === 0x3e) {
           selfClosing = true;
+          terminated = true;
           inner += 2;
           break;
         }
 
-        if (code === 62) {
+        if (code === 0x3e) {
+          terminated = true;
           inner += 1;
           break;
         }
 
-        const attrName = readName(source, inner);
-        if (!attrName) {
+        if (!hadWhitespace) {
+          pushError("malformed-attribute", "Attributes must be separated from the preceding name or attribute by whitespace", inner);
+          malformed = true;
+          inner = recoverMarkupEnd(source, inner, options.checkTime);
+          break;
+        }
+
+        const attrName = readXmlName(source, inner, options.checkTime);
+        if (attrName === null) {
           pushError("malformed-attribute", "Invalid attribute name", inner);
           malformed = true;
-          const gt = source.indexOf(">", inner);
-          inner = gt < 0 ? source.length : gt + 1;
+          inner = recoverMarkupEnd(source, inner, options.checkTime);
           break;
         }
+        if (!isValidXmlQName(attrName.value)) {
+          pushError("malformed-qualified-name", `Invalid qualified name: ${attrName.value}`, inner);
+        }
 
-        inner = skipWhitespace(source, attrName.end);
-        if (source.charCodeAt(inner) !== 61) {
+        const attributeStart = inner;
+        inner = skipWhitespace(source, attrName.end, options.checkTime);
+        if (source.charCodeAt(inner) !== 0x3d) {
           pushError("malformed-attribute", "Missing = in attribute", inner);
           malformed = true;
-          const gt = source.indexOf(">", inner);
-          inner = gt < 0 ? source.length : gt + 1;
+          inner = recoverMarkupEnd(source, inner, options.checkTime);
           break;
         }
-        inner = skipWhitespace(source, inner + 1);
+        inner = skipWhitespace(source, inner + 1, options.checkTime);
 
         const quote = source.charCodeAt(inner);
-        if (quote !== 34 && quote !== 39) {
+        if (quote !== 0x22 && quote !== 0x27) {
           pushError("malformed-attribute", "Attribute value must be quoted", inner);
           malformed = true;
-          const gt = source.indexOf(">", inner);
-          inner = gt < 0 ? source.length : gt + 1;
+          inner = recoverMarkupEnd(source, inner, options.checkTime);
           break;
         }
 
@@ -307,22 +304,40 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
 
         const qName = attrName.value;
         if (seenAttributes.has(qName)) {
-          pushError("duplicate-attribute", `Duplicate attribute: ${qName}`, attrName.end);
+          pushError("duplicate-attribute", `Duplicate attribute: ${qName}`, attributeStart);
         } else {
           seenAttributes.add(qName);
         }
 
         const rawValue = source.slice(valueStart, valueEnd);
+        const forbiddenLt = rawValue.indexOf("<");
+        if (forbiddenLt >= 0) {
+          pushError(
+            "less-than-in-attribute-value",
+            "Literal < is not allowed in attribute values",
+            valueStart + forbiddenLt
+          );
+        }
         attributes.push({
           qName,
-          value: decodeEntities(rawValue, source, valueStart, errors),
+          value: decodeEntities(
+            normalizeLiteralAttributeWhitespace(rawValue),
+            valueStart,
+            pushError,
+            options.checkTime
+          ),
           span: {
-            start: attrName.end - qName.length,
+            start: attributeStart,
             end: valueEnd + 1,
             origin: "input"
           }
         });
         inner = valueEnd + 1;
+      }
+
+      if (!terminated && !malformed) {
+        pushError("malformed-start-tag", "Unterminated start tag", lt);
+        malformed = true;
       }
 
       if (!malformed) {
@@ -334,15 +349,184 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
           start: lt,
           end: inner
         });
-        seenContent = true;
       }
       cursor = inner;
       continue;
     }
 
     pushError("malformed-tag", "Unsupported markup declaration", lt);
-    cursor = lt + 1;
+    cursor = recoverMarkupEnd(source, lt + 1, options.checkTime);
   }
 
+  options.checkTime();
   return { tokens, errors };
+}
+
+function validateXmlCharacters(
+  source: string,
+  reportError: (parseErrorId: string, message: string, offset: number) => void,
+  checkTime: BudgetCheck
+): void {
+  for (let offset = 0; offset < source.length;) {
+    if ((offset & 1023) === 0) {
+      checkTime();
+    }
+    const codePoint = source.codePointAt(offset);
+    if (codePoint === undefined) {
+      break;
+    }
+    if (!isXmlCharacter(codePoint)) {
+      reportError(
+        "invalid-xml-character",
+        `Character U+${codePoint.toString(16).toUpperCase().padStart(4, "0")} is not legal in XML 1.0`,
+        offset
+      );
+    }
+    offset += codePoint > 0xffff ? 2 : 1;
+  }
+}
+
+function skipWhitespace(source: string, start: number, checkTime: BudgetCheck): number {
+  let cursor = start;
+  while (cursor < source.length && isXmlWhitespace(source.charCodeAt(cursor))) {
+    if ((cursor & 1023) === 0) {
+      checkTime();
+    }
+    cursor += 1;
+  }
+  return cursor;
+}
+
+function recoverMarkupEnd(source: string, start: number, checkTime: BudgetCheck): number {
+  let quote = 0;
+  for (let cursor = start; cursor < source.length; cursor += 1) {
+    if ((cursor & 1023) === 0) {
+      checkTime();
+    }
+    const code = source.charCodeAt(cursor);
+    if (quote !== 0) {
+      if (code === quote) {
+        quote = 0;
+      }
+      continue;
+    }
+    if (code === 0x22 || code === 0x27) {
+      quote = code;
+    } else if (code === 0x3e) {
+      return cursor + 1;
+    }
+  }
+  return source.length;
+}
+
+function findDeclarationEnd(source: string, start: number, checkTime: BudgetCheck): number {
+  let quote = 0;
+  let subsetDepth = 0;
+  for (let cursor = start; cursor < source.length; cursor += 1) {
+    if ((cursor & 1023) === 0) {
+      checkTime();
+    }
+    const code = source.charCodeAt(cursor);
+    if (quote !== 0) {
+      if (code === quote) {
+        quote = 0;
+      }
+      continue;
+    }
+    if (code === 0x22 || code === 0x27) {
+      quote = code;
+    } else if (code === 0x5b) {
+      subsetDepth += 1;
+    } else if (code === 0x5d && subsetDepth > 0) {
+      subsetDepth -= 1;
+    } else if (code === 0x3e && subsetDepth === 0) {
+      return cursor;
+    }
+  }
+  return -1;
+}
+
+function parseXmlDeclaration(rawBody: string): XmlDeclarationFields {
+  let cursor = 3;
+  let valid = rawBody.startsWith("xml") && isXmlWhitespace(rawBody.charCodeAt(cursor));
+  cursor = skipDeclarationWhitespace(rawBody, cursor);
+
+  const version = readPseudoAttribute(rawBody, cursor, "version");
+  if (version === null || !/^1\.[0-9]+$/.test(version.value)) {
+    return { valid: false, version: version?.value ?? null, encoding: null, standalone: null };
+  }
+  cursor = version.end;
+
+  let encoding: string | null = null;
+  let standalone: "yes" | "no" | null = null;
+  let next = skipDeclarationWhitespace(rawBody, cursor);
+  const hadSeparator = next > cursor;
+
+  if (rawBody.startsWith("encoding", next)) {
+    if (!hadSeparator) valid = false;
+    const parsedEncoding = readPseudoAttribute(rawBody, next, "encoding");
+    if (parsedEncoding === null || !/^[A-Za-z][A-Za-z0-9._-]*$/.test(parsedEncoding.value)) {
+      return { valid: false, version: version.value, encoding: parsedEncoding?.value ?? null, standalone: null };
+    }
+    encoding = parsedEncoding.value;
+    cursor = parsedEncoding.end;
+    next = skipDeclarationWhitespace(rawBody, cursor);
+  }
+
+  if (rawBody.startsWith("standalone", next)) {
+    if (next === cursor) valid = false;
+    const parsedStandalone = readPseudoAttribute(rawBody, next, "standalone");
+    if (parsedStandalone === null || (parsedStandalone.value !== "yes" && parsedStandalone.value !== "no")) {
+      return {
+        valid: false,
+        version: version.value,
+        encoding,
+        standalone: null
+      };
+    }
+    standalone = parsedStandalone.value;
+    cursor = parsedStandalone.end;
+    next = skipDeclarationWhitespace(rawBody, cursor);
+  }
+
+  if (next !== rawBody.length) {
+    valid = false;
+  }
+  return { valid, version: version.value, encoding, standalone };
+}
+
+function readPseudoAttribute(
+  source: string,
+  start: number,
+  expectedName: string
+): { readonly value: string; readonly end: number } | null {
+  if (!source.startsWith(expectedName, start)) {
+    return null;
+  }
+  let cursor = skipDeclarationWhitespace(source, start + expectedName.length);
+  if (source.charCodeAt(cursor) !== 0x3d) {
+    return null;
+  }
+  cursor = skipDeclarationWhitespace(source, cursor + 1);
+  const quote = source.charCodeAt(cursor);
+  if (quote !== 0x22 && quote !== 0x27) {
+    return null;
+  }
+  const valueStart = cursor + 1;
+  const valueEnd = source.indexOf(String.fromCharCode(quote), valueStart);
+  if (valueEnd < 0) {
+    return null;
+  }
+  return {
+    value: source.slice(valueStart, valueEnd),
+    end: valueEnd + 1
+  };
+}
+
+function skipDeclarationWhitespace(source: string, start: number): number {
+  let cursor = start;
+  while (cursor < source.length && isXmlWhitespace(source.charCodeAt(cursor))) {
+    cursor += 1;
+  }
+  return cursor;
 }

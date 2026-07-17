@@ -118,7 +118,6 @@ function inputHash(input: XmlReplayInput): string {
 
 function optionsHash(options: XmlParseOptions): string {
   return stableHash({
-    strict: options.strict ?? true,
     budgets: options.budgets ?? {}
   });
 }
@@ -222,7 +221,7 @@ export function createXmlReplayContract(
   const bounded = applyMaxEvents(document, baseEvents, options.maxEvents);
 
   const replayCore = {
-    contract: "xml-replay-v1" as const,
+    contract: "xml-replay-v2" as const,
     sourceKind: source,
     inputHash: inHash,
     optionsHash: optHash,

@@ -1,6 +1,5 @@
 export type {
   XmlAttribute,
-  XmlBudgetExceededDetails,
   XmlDocument,
   XmlElementNode,
   XmlNode,

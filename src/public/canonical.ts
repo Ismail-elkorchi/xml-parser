@@ -1,5 +1,6 @@
 import type { XmlDocument, XmlElementNode, XmlNode } from "../internal/types.js";
 
+/** Document or element accepted by XML canonicalization helpers. */
 export type CanonicalInput = XmlDocument | XmlElementNode;
 
 function resolveRoot(input: CanonicalInput): XmlElementNode | null {

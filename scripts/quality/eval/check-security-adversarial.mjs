@@ -47,12 +47,12 @@ function runCorpusCase(entry) {
       };
     }
 
-    const ok = entry.expectedThrowBudget === error.details.budget;
+    const ok = entry.expectedThrowBudget === error.budget;
     return {
       id: entry.id,
       ok,
       expectedThrowBudget: entry.expectedThrowBudget ?? null,
-      observedThrowBudget: error.details.budget
+      observedThrowBudget: error.budget
     };
   }
 }

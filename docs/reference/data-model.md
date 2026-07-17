@@ -34,7 +34,7 @@ Use query helpers for common tasks:
 ## Errors And Budgets
 
 - Non-fatal parse diagnostics are returned in `errors`.
-- Budget violations throw `XmlBudgetExceededError` with budget name, limit, and observed value.
+- Budget violations throw `XmlBudgetExceededError` with `budget`, `limit`, and `actual` values.
 - Parse budgets are configurable through `XmlParseOptions.budgets`.
 
 ## Validation Model

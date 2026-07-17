@@ -57,13 +57,11 @@ function normalizeThrow(error) {
     "parseErrorId" in error && typeof error.parseErrorId === "string" ? error.parseErrorId : "unexpected-throw";
 
   const details =
-    "details" in error && error.details && typeof error.details === "object"
+    "budget" in error && typeof error.budget === "string"
       ? {
-          budget:
-            "budget" in error.details && typeof error.details.budget === "string" ? error.details.budget : null,
-          limit: "limit" in error.details && typeof error.details.limit === "number" ? error.details.limit : null,
-          observed:
-            "observed" in error.details && typeof error.details.observed === "number" ? error.details.observed : null
+          budget: error.budget,
+          limit: "limit" in error && typeof error.limit === "number" ? error.limit : null,
+          actual: "actual" in error && typeof error.actual === "number" ? error.actual : null
         }
       : null;
 

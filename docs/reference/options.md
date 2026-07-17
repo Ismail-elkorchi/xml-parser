@@ -2,11 +2,6 @@
 
 ## Parse options (`parseXml`, `parseXmlBytes`, `parseXmlStream`, `tokenizeXml`)
 
-### `strict`
-- Type: `boolean`
-- Default: `true`
-- Enforces strict XML well-formedness behavior.
-
 ### `budgets`
 - Type: `Partial<XmlParseBudgets>`
 - Default values:
@@ -19,7 +14,9 @@
   - `maxErrors`: `1_000`
   - `maxTimeMs`: `2_000`
 
-Budget excess raises a structured parser budget error.
+Budget excess raises a structured parser budget error. All budget values must
+be non-negative finite integers. XML 1.0 well-formedness and namespace checks
+are always enabled.
 
 ## Validation options (`validateXmlProfile`)
 

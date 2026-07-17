@@ -1,5 +1,13 @@
+import {
+  assertBudget,
+  createTimeBudgetCheck,
+  monotonicNow,
+  resolveBudgets,
+  type BudgetCheck,
+  utf8ByteLength
+} from "./budgets.js";
 import { stableHash } from "./hash.js";
-import { createParseError, XmlBudgetExceededError } from "./parse-errors.js";
+import { XmlDecodingError, createParseError } from "./parse-errors.js";
 import { tokenizeXml } from "./tokenizer.js";
 import type {
   XmlAttribute,
@@ -12,29 +20,12 @@ import type {
   XmlTextNode,
   XmlToken
 } from "./types.js";
+import { containsNonXmlWhitespace, normalizeXmlLineEndings } from "./xml-syntax.js";
 
 const XML_NS = "http://www.w3.org/XML/1998/namespace";
 const XMLNS_NS = "http://www.w3.org/2000/xmlns/";
 
-export const DEFAULT_BUDGETS: XmlParseBudgets = {
-  maxInputBytes: 1_000_000,
-  maxStreamBytes: 1_000_000,
-  maxNodes: 50_000,
-  maxDepth: 256,
-  maxAttributesPerElement: 256,
-  maxTextBytes: 1_000_000,
-  maxErrors: 1_000,
-  maxTimeMs: 2_000
-};
-
-function getBudgets(options: XmlParseOptions): XmlParseBudgets {
-  return {
-    ...DEFAULT_BUDGETS,
-    ...options.budgets
-  };
-}
-
-function splitQName(qName: string): { prefix: string | null; localName: string } {
+function splitQName(qName: string): { readonly prefix: string | null; readonly localName: string } {
   const index = qName.indexOf(":");
   if (index < 0) {
     return {
@@ -56,28 +47,6 @@ function inputSpan(start: number, end: number): XmlSpan {
   };
 }
 
-function asBytes(input: string): number {
-  return new TextEncoder().encode(input).length;
-}
-
-function assertBudget(
-  budget: keyof XmlParseBudgets,
-  limit: number,
-  observed: number
-): void {
-  if (observed > limit) {
-    throw new XmlBudgetExceededError({
-      budget,
-      limit,
-      observed
-    });
-  }
-}
-
-function hasMeaningfulText(value: string): boolean {
-  return value.trim().length > 0;
-}
-
 function createNamespaceRoot(): Map<string, string> {
   return new Map<string, string>([
     ["xml", XML_NS],
@@ -85,25 +54,28 @@ function createNamespaceRoot(): Map<string, string> {
   ]);
 }
 
+function resolveNamespace(context: Map<string, string>, prefix: string): string | null {
+  const value = context.get(prefix);
+  return value === undefined || value.length === 0 ? null : value;
+}
+
 function buildDocumentFromTokens(
-  source: string | null,
-  tokenizeResult: { tokens: XmlToken[]; errors: XmlParseError[] },
-  options: XmlParseOptions,
+  source: string,
+  documentSource: string | null,
+  tokenizeResult: { readonly tokens: XmlToken[]; readonly errors: XmlParseError[] },
   budgets: XmlParseBudgets,
-  startTime: number
+  checkTime: BudgetCheck
 ): XmlDocument {
-  const strict = options.strict !== false;
   const errors: XmlParseError[] = [...tokenizeResult.errors];
 
   const pushError = (parseErrorId: string, message: string, offset: number): void => {
     if (errors.length >= budgets.maxErrors) {
       assertBudget("maxErrors", budgets.maxErrors, errors.length + 1);
     }
-    errors.push(createParseError(parseErrorId, message, source ?? "", offset));
+    errors.push(createParseError(parseErrorId, message, source, offset, checkTime));
   };
 
-  const rootContext = createNamespaceRoot();
-  const contextStack: Map<string, string>[] = [rootContext];
+  const contextStack: Map<string, string>[] = [createNamespaceRoot()];
   const openStack: XmlElementNode[] = [];
 
   let root: XmlElementNode | null = null;
@@ -117,22 +89,15 @@ function buildDocumentFromTokens(
     return nextNodeId++;
   };
 
-  const checkTime = (): void => {
-    const elapsed = Date.now() - startTime;
-    assertBudget("maxTimeMs", budgets.maxTimeMs, elapsed);
-  };
-
   for (const token of tokenizeResult.tokens) {
     checkTime();
 
-    if (token.kind === "xml-declaration" || token.kind === "comment") {
-      continue;
-    }
-
-    if (token.kind === "doctype" || token.kind === "processing-instruction") {
-      if (strict) {
-        pushError("unsupported-declaration", "Declaration type not supported in strict mode", token.start);
-      }
+    if (
+      token.kind === "xml-declaration" ||
+      token.kind === "comment" ||
+      token.kind === "doctype" ||
+      token.kind === "processing-instruction"
+    ) {
       continue;
     }
 
@@ -142,13 +107,13 @@ function buildDocumentFromTokens(
       }
 
       if (openStack.length === 0) {
-        if (hasMeaningfulText(token.value)) {
+        if (containsNonXmlWhitespace(token.value)) {
           pushError("text-outside-root", "Text outside root element", token.start);
         }
         continue;
       }
 
-      textBytes += asBytes(token.value);
+      textBytes += utf8ByteLength(token.value);
       assertBudget("maxTextBytes", budgets.maxTextBytes, textBytes);
 
       const textNode: XmlTextNode = {
@@ -158,37 +123,57 @@ function buildDocumentFromTokens(
         span: inputSpan(token.start, token.end)
       };
 
-      const parent = openStack[openStack.length - 1];
-      if (parent) {
-        parent.children.push(textNode);
-      }
+      openStack[openStack.length - 1]?.children.push(textNode);
       continue;
     }
 
     if (token.kind === "start-tag") {
       assertBudget("maxAttributesPerElement", budgets.maxAttributesPerElement, token.attributes.length);
 
-      const parentContext = contextStack[contextStack.length - 1];
+      const parentContext = contextStack[contextStack.length - 1] ?? createNamespaceRoot();
       const localContext = new Map(parentContext);
       for (const attr of token.attributes) {
         if (attr.qName === "xmlns") {
-          localContext.set("", attr.value);
-        } else if (attr.qName.startsWith("xmlns:")) {
-          const declaredPrefix = attr.qName.slice("xmlns:".length);
-          if (declaredPrefix === "xmlns") {
-            pushError("namespace-prefix-redefined", "Prefix xmlns is reserved", attr.span.start);
-          } else if (declaredPrefix === "xml" && attr.value !== XML_NS) {
-            pushError("namespace-prefix-redefined", "Prefix xml must map to XML namespace", attr.span.start);
-          } else {
-            localContext.set(declaredPrefix, attr.value);
+          if (attr.value === XML_NS || attr.value === XMLNS_NS) {
+            pushError("namespace-name-reserved", "The default namespace cannot use a reserved namespace name", attr.span.start);
           }
+          if (attr.value.length === 0) {
+            localContext.delete("");
+          } else {
+            localContext.set("", attr.value);
+          }
+          continue;
+        }
+        if (!attr.qName.startsWith("xmlns:")) {
+          continue;
+        }
+
+        const declaredPrefix = attr.qName.slice("xmlns:".length);
+        if (declaredPrefix === "xmlns") {
+          pushError("namespace-prefix-reserved", "Prefix xmlns cannot be declared", attr.span.start);
+        } else if (declaredPrefix === "xml" && attr.value !== XML_NS) {
+          pushError("namespace-prefix-reserved", "Prefix xml must map to the XML namespace", attr.span.start);
+        } else if (declaredPrefix !== "xml" && attr.value === XML_NS) {
+          pushError("namespace-name-reserved", "Only prefix xml may map to the XML namespace", attr.span.start);
+        }
+        if (attr.value === XMLNS_NS) {
+          pushError("namespace-name-reserved", "The xmlns namespace name cannot be declared", attr.span.start);
+        }
+        if (attr.value.length === 0) {
+          pushError("namespace-prefix-undeclared", "Namespace prefixes cannot be undeclared in Namespaces in XML 1.0", attr.span.start);
+          localContext.delete(declaredPrefix);
+        } else {
+          localContext.set(declaredPrefix, attr.value);
         }
       }
 
       const elementName = splitQName(token.qName);
+      if (elementName.prefix === "xmlns") {
+        pushError("namespace-prefix-reserved", "Element names cannot use the xmlns prefix", token.start);
+      }
       const elementNamespace = elementName.prefix
-        ? (localContext.get(elementName.prefix) ?? null)
-        : (localContext.get("") ?? null);
+        ? resolveNamespace(localContext, elementName.prefix)
+        : resolveNamespace(localContext, "");
 
       if (elementName.prefix && elementNamespace === null) {
         pushError(
@@ -198,19 +183,37 @@ function buildDocumentFromTokens(
         );
       }
 
+      const expandedAttributeNames = new Set<string>();
+      const attributeQNames = new Set<string>();
       const attributes: XmlAttribute[] = token.attributes.map((attr) => {
+        const duplicateQName = attributeQNames.has(attr.qName);
+        attributeQNames.add(attr.qName);
         const split = splitQName(attr.qName);
+        const namespaceDeclaration = attr.qName === "xmlns" || attr.qName.startsWith("xmlns:");
         let namespaceURI: string | null = null;
-        if (attr.qName === "xmlns" || attr.qName.startsWith("xmlns:")) {
+        if (namespaceDeclaration) {
           namespaceURI = XMLNS_NS;
         } else if (split.prefix) {
-          namespaceURI = localContext.get(split.prefix) ?? null;
+          namespaceURI = resolveNamespace(localContext, split.prefix);
           if (namespaceURI === null) {
             pushError(
               "namespace-prefix-undefined",
               `Undefined namespace prefix: ${split.prefix}`,
               attr.span.start
             );
+          }
+        }
+
+        if (!namespaceDeclaration && !duplicateQName) {
+          const expandedName = `${namespaceURI ?? ""}\u0000${split.localName}`;
+          if (expandedAttributeNames.has(expandedName)) {
+            pushError(
+              "duplicate-expanded-attribute",
+              `Duplicate expanded attribute name: ${attr.qName}`,
+              attr.span.start
+            );
+          } else {
+            expandedAttributeNames.add(expandedName);
           }
         }
 
@@ -239,10 +242,7 @@ function buildDocumentFromTokens(
       };
 
       if (openStack.length > 0) {
-        const parent = openStack[openStack.length - 1];
-        if (parent) {
-          parent.children.push(element);
-        }
+        openStack[openStack.length - 1]?.children.push(element);
       } else if (root === null) {
         root = element;
       } else {
@@ -257,51 +257,53 @@ function buildDocumentFromTokens(
       continue;
     }
 
-    if (openStack.length === 0) {
-      pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
-      continue;
-    }
-
-    let matchIndex = -1;
-    for (let index = openStack.length - 1; index >= 0; index -= 1) {
-      const candidate = openStack[index];
-      if (candidate?.qName === token.qName) {
-        matchIndex = index;
-        break;
+    if (token.kind === "end-tag") {
+      if (openStack.length === 0) {
+        pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
+        continue;
       }
-    }
 
-    if (matchIndex < 0) {
-      pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
-      continue;
-    }
+      let matchIndex = -1;
+      for (let index = openStack.length - 1; index >= 0; index -= 1) {
+        checkTime();
+        if (openStack[index]?.qName === token.qName) {
+          matchIndex = index;
+          break;
+        }
+      }
 
-    while (openStack.length - 1 > matchIndex) {
-      const dangling = openStack.pop();
+      if (matchIndex < 0) {
+        pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
+        continue;
+      }
+
+      while (openStack.length - 1 > matchIndex) {
+        const dangling = openStack.pop();
+        contextStack.pop();
+        if (dangling) {
+          pushError("mismatched-end-tag", `Mismatched end tag for ${dangling.qName}`, token.start);
+          dangling.endTagSpan = inputSpan(token.start, token.end);
+          dangling.span.end = token.end;
+        }
+      }
+
+      const node = openStack.pop();
       contextStack.pop();
-      if (dangling) {
-        pushError("mismatched-end-tag", `Mismatched end tag for ${dangling.qName}`, token.start);
-        dangling.endTagSpan = inputSpan(token.start, token.end);
-        dangling.span.end = token.end;
+      if (node) {
+        node.endTagSpan = inputSpan(token.start, token.end);
+        node.span.end = token.end;
       }
-    }
-
-    const node = openStack.pop();
-    contextStack.pop();
-    if (node) {
-      node.endTagSpan = inputSpan(token.start, token.end);
-      node.span.end = token.end;
     }
   }
 
   while (openStack.length > 0) {
+    checkTime();
     const dangling = openStack.pop();
     contextStack.pop();
     if (dangling) {
-      const endOffset = source === null ? dangling.span.end : source.length;
-      pushError("unclosed-tag", `Unclosed tag: ${dangling.qName}`, endOffset);
-      dangling.endTagSpan = inputSpan(endOffset, endOffset);
-      dangling.span.end = endOffset;
+      pushError("unclosed-tag", `Unclosed tag: ${dangling.qName}`, source.length);
+      dangling.endTagSpan = inputSpan(source.length, source.length);
+      dangling.span.end = source.length;
     }
   }
 
@@ -311,72 +313,127 @@ function buildDocumentFromTokens(
 
   const doc: XmlDocument = {
     kind: "document",
-    source,
+    source: documentSource,
     root,
     errors,
     tokens: tokenizeResult.tokens,
     determinismHash: ""
   };
 
-  doc.determinismHash = stableHash({
-    root,
-    errors,
-    tokens: doc.tokens
-  });
-
+  checkTime();
+  doc.determinismHash = stableHash({ root, errors, tokens: doc.tokens }, checkTime);
+  checkTime();
   return doc;
 }
 
-export function parseXmlSource(input: string, options: XmlParseOptions = {}): XmlDocument {
-  const source = input;
-  const budgets = getBudgets(options);
-  const startTime = Date.now();
-
-  assertBudget("maxInputBytes", budgets.maxInputBytes, asBytes(source));
-
-  const tokenizeResult = tokenizeXml(source, {
-    maxErrors: budgets.maxErrors
+function parseDecodedSource(
+  decodedSource: string,
+  documentSource: "retain" | "discard",
+  byteLength: number,
+  budgets: XmlParseBudgets,
+  checkTime: BudgetCheck
+): XmlDocument {
+  assertBudget("maxInputBytes", budgets.maxInputBytes, byteLength);
+  checkTime();
+  const source = normalizeXmlLineEndings(decodedSource);
+  checkTime();
+  const tokenized = tokenizeXml(source, {
+    maxErrors: budgets.maxErrors,
+    checkTime
   });
+  checkTime();
+  return buildDocumentFromTokens(
+    source,
+    documentSource === "retain" ? source : null,
+    tokenized,
+    budgets,
+    checkTime
+  );
+}
 
-  return buildDocumentFromTokens(source, tokenizeResult, options, budgets, startTime);
+export function parseXmlSource(input: string, options: XmlParseOptions = {}): XmlDocument {
+  const budgets = resolveBudgets(options);
+  const startedAt = monotonicNow();
+  const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
+  const byteLength = utf8ByteLength(input);
+  return parseDecodedSource(input, "retain", byteLength, budgets, checkTime);
+}
+
+export function tokenizeXmlSource(input: string, options: XmlParseOptions = {}): XmlToken[] {
+  const budgets = resolveBudgets(options);
+  const startedAt = monotonicNow();
+  const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
+  assertBudget("maxInputBytes", budgets.maxInputBytes, utf8ByteLength(input));
+  checkTime();
+  const source = normalizeXmlLineEndings(input);
+  const result = tokenizeXml(source, {
+    maxErrors: budgets.maxErrors,
+    checkTime
+  });
+  checkTime();
+  return result.tokens;
 }
 
 export function parseXmlBytesSource(input: Uint8Array, options: XmlParseOptions = {}): XmlDocument {
-  const decoder = new TextDecoder();
-  return parseXmlSource(decoder.decode(input), options);
+  const budgets = resolveBudgets(options);
+  const startedAt = monotonicNow();
+  const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
+  assertBudget("maxInputBytes", budgets.maxInputBytes, input.byteLength);
+  const source = decodeUtf8(new TextDecoder("utf-8", { fatal: true }), input, false);
+  checkTime();
+  return parseDecodedSource(source, "retain", input.byteLength, budgets, checkTime);
 }
 
 export async function parseXmlStreamSource(
   stream: ReadableStream<Uint8Array>,
   options: XmlParseOptions = {}
 ): Promise<XmlDocument> {
-  const budgets = getBudgets(options);
+  const budgets = resolveBudgets(options);
+  const startedAt = monotonicNow();
+  const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
   const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  const startTime = Date.now();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
   const chunks: string[] = [];
   let consumedBytes = 0;
 
-  for (;;) {
-    assertBudget("maxTimeMs", budgets.maxTimeMs, Date.now() - startTime);
+  try {
+    for (;;) {
+      checkTime();
+      const { done, value } = await reader.read();
+      checkTime();
+      if (done) {
+        break;
+      }
 
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
+      consumedBytes += value.byteLength;
+      assertBudget("maxInputBytes", budgets.maxInputBytes, consumedBytes);
+      assertBudget("maxStreamBytes", budgets.maxStreamBytes, consumedBytes);
+      chunks.push(decodeUtf8(decoder, value, true));
     }
-    consumedBytes += value.byteLength;
-    assertBudget("maxInputBytes", budgets.maxInputBytes, consumedBytes);
-    assertBudget("maxStreamBytes", budgets.maxStreamBytes, consumedBytes);
-    chunks.push(decoder.decode(value, { stream: true }));
+
+    chunks.push(decodeUtf8(decoder, undefined, false));
+    checkTime();
+    return parseDecodedSource(chunks.join(""), "discard", consumedBytes, budgets, checkTime);
+  } catch (error) {
+    try {
+      await reader.cancel(error);
+    } catch {
+      // Preserve the original read, decode, or parse failure.
+    }
+    throw error;
+  } finally {
+    reader.releaseLock();
   }
+}
 
-  chunks.push(decoder.decode());
-
-  const source = chunks.join("");
-  const tokenized = tokenizeXml(source, {
-    maxErrors: budgets.maxErrors
-  });
-  const document = buildDocumentFromTokens(source, tokenized, options, budgets, startTime);
-  document.source = null;
-  return document;
+function decodeUtf8(
+  decoder: TextDecoder,
+  input: Uint8Array | undefined,
+  stream: boolean
+): string {
+  try {
+    return input === undefined ? decoder.decode() : decoder.decode(input, { stream });
+  } catch {
+    throw new XmlDecodingError();
+  }
 }

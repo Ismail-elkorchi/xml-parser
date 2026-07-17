@@ -5,7 +5,7 @@ const reportPath = new URL("../../../reports/scope-threat-model.json", import.me
 const requiredDocs = [
   {
     path: "docs/explanation/security-posture.md",
-    markers: ["strict mode", "budgets", "external"]
+    markers: ["well-formedness", "budgets", "external"]
   },
   {
     path: "docs/reference/error-model.md",

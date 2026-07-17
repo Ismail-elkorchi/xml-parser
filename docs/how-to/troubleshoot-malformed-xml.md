@@ -14,7 +14,6 @@ import { parseXml } from "@ismail-elkorchi/xml-parser";
 
 const malformed = "<root><item></root>";
 const document = parseXml(malformed, {
-  strict: true,
   budgets: {
     maxInputBytes: 4_096,
     maxNodes: 128,
@@ -39,8 +38,8 @@ mismatched-end-tag
 - The caller ignores `document.errors` and assumes the tree is fully trustworthy.
 - `maxErrors` is too low for troubleshooting, so diagnostics stop before the
   useful failure is reported.
-- HTML-like recovery expectations are applied to XML input; XML keeps stricter
-  malformed-input behavior.
+- HTML-like recovery expectations are applied to XML input; XML well-formedness
+  checks are unconditional.
 
 ## Related reference
 - [Error model](../reference/error-model.md)

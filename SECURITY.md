@@ -27,7 +27,7 @@ This default behavior is intended to block common XXE and entity expansion abuse
 
 ## Safe configuration guidance
 
-- Keep `strict: true` for untrusted input.
+- XML 1.0 well-formedness checks cannot be disabled.
 - Set explicit parse budgets (`maxInputBytes`, `maxStreamBytes`, `maxNodes`, `maxDepth`, `maxTextBytes`, `maxTimeMs`).
 - Treat parse errors as hard failures in ingestion pipelines that process untrusted XML.
 

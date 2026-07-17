@@ -105,7 +105,7 @@ The Node.js package surface is verified against Node 20, 22, and 24.
 ## Security and Safety Notes
 
 XML parsing is not a trust boundary by itself.
-- Keep strict mode enabled.
+- XML 1.0 well-formedness checks are unconditional.
 - Configure parse budgets for untrusted input.
 - Validate and sanitize at the application boundary.
 

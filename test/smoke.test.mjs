@@ -111,7 +111,8 @@ test("budget errors are structured and deterministic", () => {
     () => parseXml("<root><a/></root>", { budgets: { maxNodes: 1 } }),
     (error) => {
       assert.equal(error instanceof XmlBudgetExceededError, true);
-      assert.equal(error.details.budget, "maxNodes");
+      assert.equal(error.code, "BUDGET_EXCEEDED");
+      assert.equal(error.budget, "maxNodes");
       assert.equal(error.parseErrorId, "budget-exceeded");
       return true;
     }

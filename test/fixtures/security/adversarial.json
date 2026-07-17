@@ -3,12 +3,12 @@
     {
       "id": "adv-001-dtd-default-deny",
       "xml": "<!DOCTYPE root><root/>",
-      "expectedErrorIds": ["disallowed-dtd", "unsupported-declaration"]
+      "expectedErrorIds": ["disallowed-dtd"]
     },
     {
       "id": "adv-002-external-entity-default-deny",
       "xml": "<!DOCTYPE root SYSTEM \"https://example.com/x.dtd\"><root/>",
-      "expectedErrorIds": ["disallowed-dtd", "disallowed-external-entity", "unsupported-declaration"]
+      "expectedErrorIds": ["disallowed-dtd", "disallowed-external-entity"]
     },
     {
       "id": "adv-003-entity-expansion-like",
@@ -78,7 +78,7 @@
     {
       "id": "adv-014-namespace-poison",
       "xml": "<root xmlns:xml=\"urn:wrong\"/>",
-      "expectedErrorIds": ["namespace-prefix-redefined"]
+      "expectedErrorIds": ["namespace-prefix-reserved"]
     },
     {
       "id": "adv-015-prefix-undefined",
@@ -88,7 +88,7 @@
     {
       "id": "adv-016-proc-inst",
       "xml": "<?evil run?><root/>",
-      "expectedErrorIds": ["unsupported-processing-instruction", "unsupported-declaration"]
+      "expectedErrorIds": []
     },
     {
       "id": "adv-017-xml-decl-mid-document",
@@ -110,6 +110,12 @@
       "id": "adv-020-malformed-processing-instruction",
       "xml": "<?xml version=\"1.0\"<root/>",
       "expectedErrorIds": ["malformed-processing-instruction", "no-root-element"]
+    },
+    {
+      "id": "adv-021-entity-error-budget",
+      "xml": "<root>&missing;&missing;&missing;</root>",
+      "options": {"budgets": {"maxErrors": 1}},
+      "expectedThrowBudget": "maxErrors"
     }
   ]
 }

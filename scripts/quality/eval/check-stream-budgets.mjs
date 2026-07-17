@@ -37,8 +37,13 @@ try {
   );
 } catch (error) {
   if (error instanceof XmlBudgetExceededError) {
-    budgetFailureOk = error.details.budget === "maxStreamBytes";
-    budgetFailure = error.details;
+    budgetFailureOk = error.budget === "maxStreamBytes";
+    budgetFailure = {
+      code: error.code,
+      budget: error.budget,
+      limit: error.limit,
+      actual: error.actual
+    };
   }
 }
 
