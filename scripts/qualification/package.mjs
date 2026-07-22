@@ -1,11 +1,42 @@
 import { execFileSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { copyFile, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 
 const workspace = await mkdtemp(join(tmpdir(), "xml-parser-package-"));
+const reportPath = resolve("reports/package.json");
+const artifactDirectory = process.env["XML_PARSER_PACKAGE_ARTIFACT_DIRECTORY"] === undefined
+  ? undefined
+  : resolve(process.env["XML_PARSER_PACKAGE_ARTIFACT_DIRECTORY"]);
+
+async function writeReport(report) {
+  await mkdir(resolve("reports"), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
+}
 
 try {
+  const [packageManifest, packageLock, jsrManifest] = await Promise.all([
+    readFile("package.json", "utf8").then(JSON.parse),
+    readFile("package-lock.json", "utf8").then(JSON.parse),
+    readFile("jsr.json", "utf8").then(JSON.parse)
+  ]);
+  if (
+    packageManifest.name !== jsrManifest.name ||
+    packageManifest.version !== jsrManifest.version ||
+    packageManifest.version !== packageLock.version ||
+    packageManifest.version !== packageLock.packages?.[""]?.version
+  ) {
+    throw new Error("package, lockfile, and JSR manifests must identify the same package version");
+  }
+  const runtimeDependencies = Object.keys(packageManifest.dependencies ?? {}).sort();
+  const lockedRuntimeDependencies = Object.keys(
+    packageLock.packages?.[""]?.dependencies ?? {}
+  ).sort();
+  if (runtimeDependencies.length > 0 || lockedRuntimeDependencies.length > 0) {
+    throw new Error("published package must not contain runtime dependencies");
+  }
+
   const packOutput = execFileSync("npm", ["pack", "--json", "--pack-destination", workspace], {
     encoding: "utf8"
   });
@@ -87,7 +118,63 @@ try {
   if (Object.keys(installedManifest.dependencies ?? {}).length > 0) {
     throw new Error("packed package contains runtime dependencies");
   }
+  if (
+    installedManifest.name !== packageManifest.name ||
+    installedManifest.version !== packageManifest.version
+  ) {
+    throw new Error("installed package identity differs from the qualified manifests");
+  }
+
+  const tarballBytes = await readFile(tarball);
+  const sha256 = createHash("sha256").update(tarballBytes).digest("hex");
+  if (typeof manifest.integrity !== "string" || !manifest.integrity.startsWith("sha512-")) {
+    throw new Error("npm pack did not report SHA-512 integrity for the package artifact");
+  }
+  if (artifactDirectory !== undefined) {
+    const relativeArtifactDirectory = relative(process.cwd(), artifactDirectory);
+    if (
+      relativeArtifactDirectory === "" ||
+      (!relativeArtifactDirectory.startsWith(`..${sep}`) && relativeArtifactDirectory !== "..")
+    ) {
+      throw new Error("publication artifacts must be preserved outside the checkout");
+    }
+    await mkdir(artifactDirectory, { recursive: true });
+    await copyFile(tarball, join(artifactDirectory, manifest.filename));
+  }
+
+  await writeReport({
+    schemaVersion: 1,
+    suite: "xml-parser-package",
+    generatedAt: new Date().toISOString(),
+    ok: true,
+    package: {
+      name: packageManifest.name,
+      version: packageManifest.version
+    },
+    tarball: {
+      name: manifest.filename,
+      bytes: tarballBytes.byteLength,
+      sha256,
+      integrity: manifest.integrity,
+      files: manifest.files.length
+    },
+    runtimeDependencies,
+    lockedRuntimeDependencies,
+    installed: {
+      runtimeConsumer: "pass",
+      strictTypeScriptConsumer: "pass"
+    }
+  });
   process.stdout.write(`package qualification passed: ${installedManifest.name}@${installedManifest.version}\n`);
+} catch (error) {
+  await writeReport({
+    schemaVersion: 1,
+    suite: "xml-parser-package",
+    generatedAt: new Date().toISOString(),
+    ok: false,
+    failures: [error instanceof Error ? `${error.name}: ${error.message}` : String(error)]
+  });
+  throw error;
 } finally {
   await rm(workspace, { force: true, recursive: true });
 }

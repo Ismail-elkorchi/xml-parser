@@ -36,4 +36,4 @@ The build starts from an empty `dist/`, rewrites emitted declaration imports for
 
 Registry publishing is intentionally release-only. Update `package.json` and `jsr.json` to the same version, update `CHANGELOG.md`, merge the change to `main`, tag that exact commit as `vX.Y.Z`, and publish a GitHub release for the tag.
 
-The publish workflow verifies tag/version/main ancestry, runs full release qualification for the checked-out tag, dry-runs JSR with Deno, and publishes that source to JSR plus the exact npm tarball it generated. There is no arbitrary-ref or manual publish path.
+The publish workflow requires the release tag, event SHA, checkout, and current `main` to identify the same commit. It runs full release qualification once, retains the exact qualified npm tarball outside the checkout, dry-runs JSR with a pinned Deno release, and publishes through OIDC. It verifies the complete JSR file manifest and npm artifact integrity and provenance afterward. There is no arbitrary-ref or manual publish path.
