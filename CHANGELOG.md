@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [0.2.0] - 2026-07-22
+
 - Enforce XML 1.0 character, name, declaration, entity-reference, line-ending, and namespace constraints across all parse paths.
 - Apply input, stream, node, depth, attribute, text, diagnostic, and elapsed-time budgets throughout decoding, tokenization, tree construction, and recovery.
 - Return tokenizer diagnostics with tokens; use typed configuration, decoding, and budget errors for fatal API failures.

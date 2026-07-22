@@ -5,7 +5,7 @@ on:
     types: [published]
 
 concurrency:
-  group: publish-${{ github.event.release.tag_name }}
+  group: publish-${{ github.repository }}-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 permissions:
@@ -15,56 +15,227 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    env:
+      NPM_CLI_VERSION: "11.10.0"
+      DENO_PUBLISH_VERSION: "2.9.3"
     steps:
       - name: Checkout release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.release.tag_name }}
           fetch-depth: 0
+          fetch-tags: true
+
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          cache: npm
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Pin npm CLI
+        run: |
+          npm install --global "npm@${NPM_CLI_VERSION}"
+          test "$(npm --version)" = "${NPM_CLI_VERSION}"
+
       - name: Setup Deno
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
-          deno-version: v2.x
+          deno-version: v${{ env.DENO_PUBLISH_VERSION }}
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - name: Validate release source
+
+      - name: Initialize release paths
+        run: |
+          echo "PUBLISH_ARTIFACTS_DIR=${RUNNER_TEMP}/xml-parser-publish" >> "${GITHUB_ENV}"
+          echo "XML_PARSER_PACKAGE_ARTIFACT_DIRECTORY=${RUNNER_TEMP}/xml-parser-publish" >> "${GITHUB_ENV}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Resolve publish metadata
+        id: meta
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
-          package_version="$(node -p 'require("./package.json").version')"
-          jsr_version="$(node -p 'require("./jsr.json").version')"
-          test "${package_version}" = "${jsr_version}"
-          test "${RELEASE_TAG}" = "v${package_version}"
-          test "$(git rev-list -n 1 "${RELEASE_TAG}")" = "$(git rev-parse HEAD)"
-          git fetch origin main
-          git merge-base --is-ancestor HEAD origin/main
-      - name: Install
-        run: npm ci
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Qualify release source
+
+          package_name="$(jq -r '.name' package.json)"
+          package_version="$(jq -r '.version' package.json)"
+          jsr_version="$(jq -r '.version' jsr.json)"
+
+          if [ -z "${package_name}" ] || [ "${package_name}" = "null" ]; then
+            echo "::error::Missing package name in package.json"
+            exit 1
+          fi
+          if [ "${package_version}" != "${jsr_version}" ]; then
+            echo "::error::Version mismatch: package.json=${package_version} jsr.json=${jsr_version}"
+            exit 1
+          fi
+
+          expected_version="${RELEASE_TAG#v}"
+          if ! printf '%s' "${expected_version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Expected semantic version x.y.z, got '${expected_version}'"
+            exit 1
+          fi
+          if [ "${expected_version}" != "${package_version}" ] || [ "${RELEASE_TAG}" != "v${package_version}" ]; then
+            echo "::error::Release tag and manifest version differ"
+            exit 1
+          fi
+
+          checkout_commit="$(git rev-parse HEAD)"
+          tag_commit="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          git fetch --no-tags origin main
+          main_commit="$(git rev-parse origin/main)"
+          if [ "${checkout_commit}" != "${tag_commit}" ] || [ "${checkout_commit}" != "${GITHUB_SHA}" ]; then
+            echo "::error::Checkout, release tag, and event SHA do not identify the same commit"
+            exit 1
+          fi
+          if [ "${checkout_commit}" != "${main_commit}" ]; then
+            echo "::error::Release tag must identify the current main commit"
+            exit 1
+          fi
+
+          mkdir -p "${PUBLISH_ARTIFACTS_DIR}"
+          {
+            echo "package_name=${package_name}"
+            echo "version=${package_version}"
+            echo "commit_sha=${checkout_commit}"
+            echo "release_tag=${RELEASE_TAG}"
+            echo "main_commit=${main_commit}"
+            echo "npm_cli=${NPM_CLI_VERSION}"
+            echo "deno_publish_cli=${DENO_PUBLISH_VERSION}"
+          } | tee "${PUBLISH_ARTIFACTS_DIR}/publish-summary.txt"
+
+          {
+            echo "package_name=${package_name}"
+            echo "version=${package_version}"
+            echo "commit_sha=${checkout_commit}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Run release qualification
         run: npm run qualification:release
-      - name: Verify clean qualified source
-        run: git diff --exit-code
-      - name: Verify JSR package
-        run: deno publish --dry-run
-      - name: Build npm publication artifact
-        id: pack
+
+      - name: Verify qualified revision
+        env:
+          QUALIFIED_COMMIT: ${{ steps.meta.outputs.commit_sha }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
-          pack_json="$(npm pack --json)"
-          tarball="$(printf '%s' "${pack_json}" | node -e 'let value="";process.stdin.on("data",chunk=>value+=chunk).on("end",()=>process.stdout.write(JSON.parse(value)[0].filename))')"
-          echo "tarball=${tarball}" >> "${GITHUB_OUTPUT}"
-      - name: Publish to JSR
-        run: deno publish
-      - name: Publish exact npm artifact
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "${QUALIFIED_COMMIT}"
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "${QUALIFIED_COMMIT}"
+          test "$(git rev-parse origin/main)" = "${QUALIFIED_COMMIT}"
+          test -z "$(git status --porcelain)"
+          printf 'qualified_commit=%s\n' "${QUALIFIED_COMMIT}" >> "${PUBLISH_ARTIFACTS_DIR}/publish-summary.txt"
+
+      - name: Resolve exact qualified npm artifact
+        id: artifact
+        run: |
+          set -euo pipefail
+          tarball_name="$(jq -er '.tarball.name' reports/package.json)"
+          expected_sha256="$(jq -er '.tarball.sha256' reports/package.json)"
+          expected_integrity="$(jq -er '.tarball.integrity' reports/package.json)"
+          tarball_path="${PUBLISH_ARTIFACTS_DIR}/${tarball_name}"
+          test -f "${tarball_path}"
+          actual_sha256="$(sha256sum "${tarball_path}" | awk '{print $1}')"
+          if [ "${actual_sha256}" != "${expected_sha256}" ]; then
+            echo "::error::Qualified tarball SHA-256 mismatch"
+            exit 1
+          fi
+          jq '.tarball' reports/package.json > "${PUBLISH_ARTIFACTS_DIR}/npm-pack.json"
+          tar -tzf "${tarball_path}" | LC_ALL=C sort > "${PUBLISH_ARTIFACTS_DIR}/npm-pack-file-list.txt"
+          {
+            echo "tarball_path=${tarball_path}"
+            echo "integrity=${expected_integrity}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Run JSR publish dry-run
+        run: |
+          set -euo pipefail
+          test "$(deno --version | head -1 | awk '{print $2}')" = "${DENO_PUBLISH_VERSION}"
+          deno publish --dry-run 2>&1 | tee "${PUBLISH_ARTIFACTS_DIR}/jsr-publish-dry-run.txt"
+
+      - name: Check npm publication state
+        id: npm-state
+        run: |
+          set -euo pipefail
+          node scripts/release/check-registry-version.mjs --registry=npm > "${PUBLISH_ARTIFACTS_DIR}/npm-state-before.json"
+          state="$(jq -r '.state' "${PUBLISH_ARTIFACTS_DIR}/npm-state-before.json")"
+          case "${state}" in
+            absent) action=publish ;;
+            identical) action=skip ;;
+            *) echo "::error::Unexpected npm state: ${state}"; exit 1 ;;
+          esac
+          echo "action=${action}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check JSR publication state
+        id: jsr-state
+        run: |
+          set -euo pipefail
+          node scripts/release/check-registry-version.mjs --registry=jsr > "${PUBLISH_ARTIFACTS_DIR}/jsr-state-before.json"
+          state="$(jq -r '.state' "${PUBLISH_ARTIFACTS_DIR}/jsr-state-before.json")"
+          case "${state}" in
+            absent) action=publish ;;
+            identical) action=skip ;;
+            *) echo "::error::Unexpected JSR state: ${state}"; exit 1 ;;
+          esac
+          echo "action=${action}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload pre-publication evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: publish-${{ steps.meta.outputs.version }}
+          path: |
+            ${{ runner.temp }}/xml-parser-publish/
+            reports/**
+
+      - name: Revalidate publication boundary
+        env:
+          QUALIFIED_COMMIT: ${{ steps.meta.outputs.commit_sha }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          test "$(git rev-parse HEAD)" = "${QUALIFIED_COMMIT}"
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "${QUALIFIED_COMMIT}"
+          test "$(git rev-parse origin/main)" = "${QUALIFIED_COMMIT}"
+          test -z "$(git status --porcelain)"
+
+      - name: Publish JSR
+        if: ${{ steps.jsr-state.outputs.action == 'publish' }}
+        run: |
+          set -euo pipefail
+          deno publish 2>&1 | tee "${PUBLISH_ARTIFACTS_DIR}/jsr-publish.txt"
+
+      - name: Verify JSR publication
+        run: node scripts/release/check-registry-version.mjs --registry=jsr --require-present --wait-seconds=300 > "${PUBLISH_ARTIFACTS_DIR}/jsr-state-after.json"
+
+      - name: Ensure tokenless npm auth
+        run: |
+          unset NODE_AUTH_TOKEN
+          npm config delete //registry.npmjs.org/:_authToken || true
+
+      - name: Publish npm exact artifact
+        if: ${{ steps.npm-state.outputs.action == 'publish' }}
         env:
           NPM_CONFIG_PROVENANCE: true
-        run: npm publish "${{ steps.pack.outputs.tarball }}" --access public --provenance
+        run: |
+          set -euo pipefail
+          unset NODE_AUTH_TOKEN
+          npm publish "${{ steps.artifact.outputs.tarball_path }}" --provenance --access public
+
+      - name: Verify npm publication
+        run: node scripts/release/check-registry-version.mjs --registry=npm --require-present --wait-seconds=300 > "${PUBLISH_ARTIFACTS_DIR}/npm-state-after.json"
+
+      - name: Upload publication results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: publication-${{ steps.meta.outputs.version }}
+          path: ${{ runner.temp }}/xml-parser-publish/
