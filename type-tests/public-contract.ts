@@ -14,16 +14,17 @@ const tokenization: XmlTokenizationResult = tokenizeXml("<root/>");
 const diagnostic: XmlParseErrorId = "malformed-start-tag";
 const profile: XmlValidationProfile = { requiredElementQNames: ["root"] };
 const tokenizeOptions: XmlTokenizeOptions = { budgets: { maxErrors: 2 } };
+type DocumentHasInternalHash = "determinismHash" extends keyof XmlDocument ? true : false;
+const documentHasInternalHash: DocumentHasInternalHash = false;
 
 void tokenization.tokens;
 void getParseErrorSpecRef(diagnostic);
 void profile;
 void tokenizeOptions;
+void documentHasInternalHash;
 
 // @ts-expect-error Public parse results are readonly.
 document.errors.push({});
-// @ts-expect-error Internal result hashes are not part of parsed documents.
-document.determinismHash;
 // @ts-expect-error Removed permissive parsing modes must not return through the type surface.
 parseXml("<root/>", { strict: false });
 // @ts-expect-error Specification references accept only known diagnostics.
