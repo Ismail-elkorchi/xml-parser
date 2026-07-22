@@ -53,8 +53,8 @@ function readName(source: string, start: number): { value: string; end: number }
 }
 
 function parseXmlDeclaration(raw: string): { version: string | null; encoding: string | null } {
-  const versionMatch = raw.match(/\bversion\s*=\s*["']([^"']+)["']/i);
-  const encodingMatch = raw.match(/\bencoding\s*=\s*["']([^"']+)["']/i);
+  const versionMatch = /\bversion\s*=\s*["']([^"']+)["']/i.exec(raw);
+  const encodingMatch = /\bencoding\s*=\s*["']([^"']+)["']/i.exec(raw);
   return {
     version: versionMatch?.[1] ?? null,
     encoding: encodingMatch?.[1] ?? null

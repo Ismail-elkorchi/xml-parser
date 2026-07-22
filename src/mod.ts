@@ -141,7 +141,7 @@ export function serializeXml(input: XmlDocument | XmlNode): string {
  * ```
  */
 export function tokenizeXml(input: string, options: XmlParseOptions = {}): XmlToken[] {
-  const source = String(input ?? "");
+  const source = input;
   const tokens = tokenize(source, {
     maxErrors: options.budgets?.maxErrors ?? 1_000
   });

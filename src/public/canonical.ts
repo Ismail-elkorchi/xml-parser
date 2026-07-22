@@ -3,10 +3,10 @@ import type { XmlDocument, XmlElementNode, XmlNode } from "../internal/types.js"
 export type CanonicalInput = XmlDocument | XmlElementNode;
 
 function resolveRoot(input: CanonicalInput): XmlElementNode | null {
-  if ((input as XmlDocument).kind === "document") {
-    return (input as XmlDocument).root;
+  if (input.kind === "document") {
+    return input.root;
   }
-  return input as XmlElementNode;
+  return input;
 }
 
 function escapeText(value: string): string {
@@ -69,11 +69,7 @@ function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 }
 
 function getSubtle(): SubtleCrypto {
-  const maybeCrypto = globalThis.crypto;
-  if (!maybeCrypto || !maybeCrypto.subtle) {
-    throw new Error("WebCrypto SubtleCrypto is required");
-  }
-  return maybeCrypto.subtle;
+  return globalThis.crypto.subtle;
 }/**
  * Provides deterministic public behavior for `canonicalizeXml`.
  */

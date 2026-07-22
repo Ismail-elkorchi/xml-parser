@@ -38,7 +38,7 @@ const reportProducerMap = {
 
 for (const name of required) {
   const checkPath = new URL(`../../../reports/${name}.json`, import.meta.url);
-  let ok = false;
+  let ok;
   let details = "missing report";
   try {
     const body = JSON.parse(await fs.readFile(checkPath, "utf8"));

@@ -1,77 +1,97 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import importPlugin from "eslint-plugin-import";
 import boundaries from "eslint-plugin-boundaries";
+import tseslint from "typescript-eslint";
+
+const typedFiles = ["src/**/*.ts"];
+const typedConfigs = [
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+].map((config) => ({ ...config, files: typedFiles }));
 
 export default [
   {
-    ignores: ["dist/**", "reports/**", "node_modules/**", ".github/**/*.yml", ".github/**/*.yaml"]
+    ignores: ["dist/**", "node_modules/**", "reports/**"],
   },
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
   {
-    files: ["src/**/*.ts"],
+    files: ["**/*.js", "**/*.mjs", "**/*.cjs"],
+    ...js.configs.recommended,
+    languageOptions: {
+      ...js.configs.recommended.languageOptions,
+      globals: {
+        AbortController: "readonly",
+        Buffer: "readonly",
+        console: "readonly",
+        crypto: "readonly",
+        document: "readonly",
+        performance: "readonly",
+        process: "readonly",
+        ReadableStream: "readonly",
+        TextDecoder: "readonly",
+        TextEncoder: "readonly",
+        URL: "readonly",
+        window: "readonly",
+      },
+    },
+  },
+  ...typedConfigs,
+  {
+    files: typedFiles,
     languageOptions: {
       parserOptions: {
-        project: "./tsconfig.build.json"
-      }
-    },
-    plugins: {
-      import: importPlugin,
-      boundaries
-    },
-    settings: {
-      "import/resolver": {
-        typescript: {
-          project: "./tsconfig.build.json"
-        }
+        project: "./tsconfig.build.json",
+        tsconfigRootDir: import.meta.dirname,
       },
+    },
+    plugins: { boundaries },
+    settings: {
       "boundaries/elements": [
         { type: "public", pattern: "src/public/**" },
-        { type: "internal", pattern: "src/internal/**" }
-      ]
+        { type: "internal", pattern: "src/internal/**" },
+      ],
     },
     rules: {
-      "import/no-unresolved": "error",
-      "import/no-duplicates": "error",
-      "import/order": [
+      "@typescript-eslint/consistent-type-imports": [
         "error",
-        {
-          "newlines-between": "always",
-          alphabetize: { order: "asc", caseInsensitive: true }
-        }
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
-      "boundaries/element-types": [
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/switch-exhaustiveness-check": "error",
+      "boundaries/dependencies": [
         "error",
         {
           default: "disallow",
-          rules: [
+          policies: [
             {
-              from: ["public"],
-              allow: ["public", "internal"]
+              from: { element: { types: "public" } },
+              allow: {
+                to: { element: { types: { anyOf: ["public", "internal"] } } },
+              },
             },
             {
-              from: ["internal"],
-              allow: ["internal"]
-            }
-          ]
-        }
-      ]
-    }
+              from: { element: { types: "internal" } },
+              allow: { to: { element: { types: "internal" } } },
+            },
+          ],
+        },
+      ],
+    },
   },
   {
-    files: ["scripts/**/*.mjs", "test/**/*.mjs"],
-    languageOptions: {
-      globals: {
-        console: "readonly",
-        process: "readonly",
-        URL: "readonly",
-        TextEncoder: "readonly",
-        ReadableStream: "readonly"
-      },
-      parserOptions: {
-        project: null
-      }
-    }
-  }
+    files: ["src/internal/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["../public", "../public/*", "../../public", "../../public/*"],
+              message: "Internal modules must not import the public layer.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

@@ -20,7 +20,7 @@ const requiredDocs = [
 const details = [];
 for (const doc of requiredDocs) {
   let ok;
-  let missingMarkers = [];
+  let missingMarkers;
   try {
     const body = await fs.readFile(new URL(`../../../${doc.path}`, import.meta.url), "utf8");
     missingMarkers = doc.markers.filter((marker) => !body.includes(marker));

@@ -1,10 +1,10 @@
 import type { XmlDocument, XmlElementNode, XmlNode } from "../internal/types.js";
 
 function asRoot(input: XmlDocument | XmlElementNode): XmlElementNode | null {
-  if ((input as XmlDocument).kind === "document") {
-    return (input as XmlDocument).root;
+  if (input.kind === "document") {
+    return input.root;
   }
-  return input as XmlElementNode;
+  return input;
 }
 
 function* walkElement(element: XmlElementNode): Generator<XmlElementNode> {

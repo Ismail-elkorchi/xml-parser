@@ -17,6 +17,14 @@ async function readReport(name) {
   return JSON.parse(raw);
 }
 
+async function reportPassed(name) {
+  try {
+    return (await readReport(name)).ok === true;
+  } catch {
+    return false;
+  }
+}
+
 const checks = {};
 
 checks.securityPolicyDoc = await fileExists("SECURITY.md");
@@ -29,21 +37,8 @@ checks.codeqlSecurityExtendedLane =
   /queries:\s*security-extended/.test(codeqlWorkflowText)
   && /category:\s*["']?\/language:javascript-typescript\/security-extended["']?/.test(codeqlWorkflowText);
 
-let securityAdversarialOk = false;
-let governanceBaselineOk = false;
-try {
-  securityAdversarialOk = (await readReport("security-adversarial")).ok === true;
-} catch {
-  securityAdversarialOk = false;
-}
-try {
-  governanceBaselineOk = (await readReport("governance-baseline")).ok === true;
-} catch {
-  governanceBaselineOk = false;
-}
-
-checks.securityAdversarialReportOk = securityAdversarialOk;
-checks.governanceBaselineReportOk = governanceBaselineOk;
+checks.securityAdversarialReportOk = await reportPassed("security-adversarial");
+checks.governanceBaselineReportOk = await reportPassed("governance-baseline");
 
 const ok = Object.values(checks).every((value) => value === true);
 const report = {
