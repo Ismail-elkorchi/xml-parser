@@ -10,7 +10,9 @@ export class XmlBudgetExceededError extends Error {
   readonly parseErrorId = "budget-exceeded";
 
   constructor(details: XmlBudgetExceededDetails) {
-    super(`Budget exceeded: ${details.budget} limit=${details.limit} observed=${details.observed}`);
+    super(
+      `Budget exceeded: ${details.budget} limit=${String(details.limit)} observed=${String(details.observed)}`
+    );
     this.name = "XmlBudgetExceededError";
     this.details = details;
   }

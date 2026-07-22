@@ -27,10 +27,10 @@ export interface XmlValidationResult {
 }
 
 function rootFromInput(input: XmlDocument | XmlElementNode): XmlElementNode | null {
-  if ((input as XmlDocument).kind === "document") {
-    return (input as XmlDocument).root;
+  if (input.kind === "document") {
+    return input.root;
   }
-  return input as XmlElementNode;
+  return input;
 }
 
 function* walkElements(root: XmlElementNode): Generator<XmlElementNode> {
@@ -108,7 +108,7 @@ export function validateXmlProfile(
     if (observed > max) {
       issues.push({
         code: "max-occurrences-exceeded",
-        message: `Element ${qName} exceeds max occurrences (${observed} > ${max})`,
+        message: `Element ${qName} exceeds max occurrences (${String(observed)} > ${String(max)})`,
         qName
       });
     }

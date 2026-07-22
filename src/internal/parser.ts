@@ -257,42 +257,40 @@ function buildDocumentFromTokens(
       continue;
     }
 
-    if (token.kind === "end-tag") {
-      if (openStack.length === 0) {
-        pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
-        continue;
-      }
+    if (openStack.length === 0) {
+      pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
+      continue;
+    }
 
-      let matchIndex = -1;
-      for (let index = openStack.length - 1; index >= 0; index -= 1) {
-        const candidate = openStack[index];
-        if (candidate && candidate.qName === token.qName) {
-          matchIndex = index;
-          break;
-        }
+    let matchIndex = -1;
+    for (let index = openStack.length - 1; index >= 0; index -= 1) {
+      const candidate = openStack[index];
+      if (candidate?.qName === token.qName) {
+        matchIndex = index;
+        break;
       }
+    }
 
-      if (matchIndex < 0) {
-        pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
-        continue;
-      }
+    if (matchIndex < 0) {
+      pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
+      continue;
+    }
 
-      while (openStack.length - 1 > matchIndex) {
-        const dangling = openStack.pop();
-        contextStack.pop();
-        if (dangling) {
-          pushError("mismatched-end-tag", `Mismatched end tag for ${dangling.qName}`, token.start);
-          dangling.endTagSpan = inputSpan(token.start, token.end);
-          dangling.span.end = token.end;
-        }
-      }
-
-      const node = openStack.pop();
+    while (openStack.length - 1 > matchIndex) {
+      const dangling = openStack.pop();
       contextStack.pop();
-      if (node) {
-        node.endTagSpan = inputSpan(token.start, token.end);
-        node.span.end = token.end;
+      if (dangling) {
+        pushError("mismatched-end-tag", `Mismatched end tag for ${dangling.qName}`, token.start);
+        dangling.endTagSpan = inputSpan(token.start, token.end);
+        dangling.span.end = token.end;
       }
+    }
+
+    const node = openStack.pop();
+    contextStack.pop();
+    if (node) {
+      node.endTagSpan = inputSpan(token.start, token.end);
+      node.span.end = token.end;
     }
   }
 
@@ -300,7 +298,7 @@ function buildDocumentFromTokens(
     const dangling = openStack.pop();
     contextStack.pop();
     if (dangling) {
-      const endOffset = source === null ? dangling.span.end : (source?.length ?? 0);
+      const endOffset = source === null ? dangling.span.end : source.length;
       pushError("unclosed-tag", `Unclosed tag: ${dangling.qName}`, endOffset);
       dangling.endTagSpan = inputSpan(endOffset, endOffset);
       dangling.span.end = endOffset;
@@ -330,7 +328,7 @@ function buildDocumentFromTokens(
 }
 
 export function parseXmlSource(input: string, options: XmlParseOptions = {}): XmlDocument {
-  const source = String(input ?? "");
+  const source = input;
   const budgets = getBudgets(options);
   const startTime = Date.now();
 
@@ -359,17 +357,13 @@ export async function parseXmlStreamSource(
   const chunks: string[] = [];
   let consumedBytes = 0;
 
-  while (true) {
+  for (;;) {
     assertBudget("maxTimeMs", budgets.maxTimeMs, Date.now() - startTime);
 
     const { done, value } = await reader.read();
     if (done) {
       break;
     }
-    if (!value) {
-      continue;
-    }
-
     consumedBytes += value.byteLength;
     assertBudget("maxInputBytes", budgets.maxInputBytes, consumedBytes);
     assertBudget("maxStreamBytes", budgets.maxStreamBytes, consumedBytes);

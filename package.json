@@ -45,7 +45,7 @@
     "smoke:deno": "npm run build && deno run --allow-read scripts/smoke/runtime-smoke.mjs",
     "smoke:node": "npm run build && node scripts/smoke/runtime-smoke.mjs",
     "mutation:pilot": "npm run build && node scripts/mutation/run-pilot.mjs --config=scripts/mutation/pilot-config.json --out=docs/maintainers/mutation-pilot-report.json",
-    "test": "npm run build && node --test test/**/*.test.mjs",
+    "test": "npm run build && node scripts/test/run-node-tests.mjs test",
     "test:fuzz": "npm run build && node scripts/quality/eval/check-security-adversarial.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "docs:required": "node scripts/quality/doc-required.mjs",
@@ -53,15 +53,12 @@
     "release:notes:dry-run": "node scripts/release/render-notes.mjs --dry-run",
     "changelog:update:dry-run": "node scripts/release/update-changelog.mjs --dry-run"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@eslint/js": "9.39.3",
-    "eslint": "9.39.3",
-    "eslint-import-resolver-typescript": "4.4.4",
-    "eslint-plugin-boundaries": "5.4.0",
-    "eslint-plugin-import": "2.32.0",
-    "playwright": "1.58.2",
+    "@eslint/js": "10.0.1",
+    "eslint": "10.7.0",
+    "eslint-plugin-boundaries": "7.1.0",
+    "playwright": "1.61.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.56.1"
+    "typescript-eslint": "8.65.0"
   }
 }
