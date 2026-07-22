@@ -40,20 +40,7 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Dependency freshness check
-        run: npm run deps:freshness
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Test
-        run: npm test
-
-      - name: Runtime smoke matrix
-        run: npm run smoke:all
-
-      - name: Eval CI
-        run: npm run eval:ci
+      - name: Check dependency freshness
+        run: npm run deps:outdated
+      - name: Verify project and latest runtimes
+        run: npm run check:fast && npm run smoke:all

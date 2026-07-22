@@ -1,42 +1,15 @@
 # Security policy
 
-## Supported versions
+Security fixes target `main` and the latest published `0.x` line. Older pre-1.0 releases are not maintained.
 
-| Version | Supported |
-| --- | --- |
-| `main` | yes |
-| latest `0.x` release line | yes |
-| older `0.x` lines | no |
+Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/Ismail-elkorchi/xml-parser/security/advisories/new). Include the smallest reproducer you can share, affected package and runtime versions, observed impact, and any relevant resource limits.
 
-## Reporting a vulnerability
+## Untrusted XML
 
-Report vulnerabilities privately through GitHub Security Advisories:
+DTD processing is disabled. Document-type and entity declarations produce `disallowed-dtd`; external resources and document-defined entities are never resolved. Only predefined XML entities and numeric character references are decoded.
 
-`https://github.com/Ismail-elkorchi/xml-parser/security/advisories/new`
+Well-formedness diagnostics do not throw by default. Applications that require valid XML must reject a non-empty `document.errors` array. Set limits for input bytes, stream bytes, nodes, depth, attributes, text, diagnostics, and elapsed work according to the application’s expected documents.
 
-Include reproduction input, expected behavior, observed behavior, impact details, and runtime/version context.
+The parser is not an authorization, sanitization, schema-validation, canonicalization, or signature-verification boundary. Validate parsed data for the application’s own trust model.
 
-## XML threat posture (XXE/DTD/entity expansion)
-
-- DTD declarations are rejected by default.
-- External entity declarations are rejected by default.
-- Unbounded entity expansion is not enabled.
-- Undefined entities are surfaced as parse errors.
-
-This default behavior is intended to block common XXE and entity expansion abuse paths.
-
-## Safe configuration guidance
-
-- Keep `strict: true` for untrusted input.
-- Set explicit parse budgets (`maxInputBytes`, `maxStreamBytes`, `maxNodes`, `maxDepth`, `maxTextBytes`, `maxTimeMs`).
-- Treat parse errors as hard failures in ingestion pipelines that process untrusted XML.
-
-## Verification commands
-
-```bash
-npm run check:fast
-npm run examples:run
-npm run test:fuzz
-npm run docs:lint:jsr
-npm run docs:test:jsr
-```
+Security-relevant changes should pass `npm run qualification:ci`; release qualification additionally runs an independent parser comparison.

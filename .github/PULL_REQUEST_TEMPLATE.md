@@ -1,17 +1,11 @@
-## Goal
+## Summary
 
 ## Scope
 
-## Non-goals
+## Verification
 
-## Evidence (commands + results)
 - [ ] `npm ci`
-- [ ] `npm run lint`
-- [ ] `npm run typecheck`
-- [ ] `npm run build`
-- [ ] `npm test`
-- [ ] `npm run eval:ci`
+- [ ] `npm run check:fast`
+- [ ] `npm run qualification:ci` when parser behavior, packaging, or runtime support changes
 
-## Risk and rollback
-
-## Docs updated
+## Notes

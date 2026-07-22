@@ -1,7 +1,6 @@
 import { parseXml, parseXmlBytes, parseXmlStream, serializeXml, tokenizeXml } from "../../dist/mod.js";
 
 const INPUT = "<root xmlns:n=\"urn:n\"><n:item id=\"1\">alpha &amp; beta</n:item><n:item id=\"2\"><![CDATA[x<y]]></n:item></root>";
-const EXPECTED_HASH = "33a592c987f47ad7";
 
 function detectRuntime() {
   if (typeof Deno !== "undefined") {
@@ -38,10 +37,15 @@ const fromStream = await parseXmlStream(stream);
 assert(fromString.errors.length === 0, "string parse should be error-free");
 assert(fromBytes.errors.length === 0, "bytes parse should be error-free");
 assert(fromStream.errors.length === 0, "stream parse should be error-free");
-assert(fromString.determinismHash === fromBytes.determinismHash, "string/bytes hashes must match");
-assert(fromString.determinismHash === fromStream.determinismHash, "string/stream hashes must match");
-assert(fromString.determinismHash === EXPECTED_HASH, "hash must match cross-runtime expected value");
-assert(tokenizeXml(INPUT).length > 0, "token stream must be non-empty");
+const tokenization = tokenizeXml(INPUT);
+const snapshot = {
+  root: fromString.root,
+  errors: fromString.errors,
+  tokens: tokenization.tokens
+};
+assert(JSON.stringify(fromString.root) === JSON.stringify(fromBytes.root), "string/bytes trees must match");
+assert(JSON.stringify(fromString.root) === JSON.stringify(fromStream.root), "string/stream trees must match");
+assert(tokenization.tokens.length > 0, "token stream must be non-empty");
 
 const serialized = serializeXml(fromString);
 const reparsed = parseXml(serialized);
@@ -51,9 +55,9 @@ const report = {
   suite: "runtime-smoke",
   runtime,
   ok: true,
-  hash: fromString.determinismHash,
+  snapshot,
   root: fromString.root?.qName ?? null,
-  tokenCount: tokenizeXml(INPUT).length,
+  tokenCount: tokenization.tokens.length,
   serializedBytes: new TextEncoder().encode(serialized).length
 };
 

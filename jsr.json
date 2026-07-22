@@ -5,11 +5,19 @@
   "exports": {
     ".": "./jsr/mod.ts"
   },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "jsr/mod.ts",
+      "README.md",
+      "LICENSE"
+    ]
+  },
   "exclude": [
-    "test/**",
+    "dist/**",
+    "node_modules/**",
     "reports/**",
     "tmp/**",
-    "config/**",
-    "scripts/**"
+    "xml-parser-*.tgz"
   ]
 }

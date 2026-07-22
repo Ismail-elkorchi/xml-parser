@@ -45,6 +45,7 @@ export default [
     plugins: { boundaries },
     settings: {
       "boundaries/elements": [
+        { type: "contract", pattern: "src/contracts/**" },
         { type: "public", pattern: "src/public/**" },
         { type: "internal", pattern: "src/internal/**" },
       ],
@@ -66,12 +67,16 @@ export default [
             {
               from: { element: { types: "public" } },
               allow: {
-                to: { element: { types: { anyOf: ["public", "internal"] } } },
+                to: { element: { types: { anyOf: ["contract", "public", "internal"] } } },
               },
             },
             {
               from: { element: { types: "internal" } },
-              allow: { to: { element: { types: "internal" } } },
+              allow: { to: { element: { types: { anyOf: ["contract", "internal"] } } } },
+            },
+            {
+              from: { element: { types: "contract" } },
+              allow: { to: { element: { types: "contract" } } },
             },
           ],
         },

@@ -21,13 +21,14 @@
     "noEmitOnError": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    "rewriteRelativeImportExtensions": true,
     "moduleDetection": "force",
     "skipLibCheck": false,
     "noErrorTruncation": true,
     "newLine": "lf",
     "types": [],
     "declaration": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "rootDir": "src",
     "outDir": "dist"
   }

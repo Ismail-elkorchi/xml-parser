@@ -95,17 +95,17 @@ async function runBrowserSmoke(baseUrl) {
         parseXmlBytes: fromBytes.errors.length === 0,
         parseXmlStream: fromStream.errors.length === 0,
         serializeXml: typeof serialized === "string" && serialized.includes("<root"),
-        tokenizeXml: Array.isArray(tokens) && tokens.length > 0,
-        determinism:
-          fromString.determinismHash === fromBytes.determinismHash &&
-          fromString.determinismHash === fromStream.determinismHash,
+        tokenizeXml: Array.isArray(tokens.tokens) && tokens.tokens.length > 0 && tokens.errors.length === 0,
+        parity:
+          JSON.stringify(fromString.root) === JSON.stringify(fromBytes.root) &&
+          JSON.stringify(fromString.root) === JSON.stringify(fromStream.root),
         roundtrip: reparsed.errors.length === 0
       };
 
       const stablePayload = {
         root: fromString.root?.qName ?? null,
-        hash: fromString.determinismHash,
-        tokenCount: tokens.length,
+        errors: fromString.errors,
+        tokenCount: tokens.tokens.length,
         serialized
       };
 
@@ -118,7 +118,6 @@ async function runBrowserSmoke(baseUrl) {
       return {
         ok: Object.values(checks).every((value) => value === true),
         checks,
-        determinismHash: fromString.determinismHash,
         hash,
         userAgent: globalThis.navigator.userAgent
       };
@@ -127,7 +126,6 @@ async function runBrowserSmoke(baseUrl) {
     return {
       ok: smoke.ok,
       checks: smoke.checks,
-      determinismHash: smoke.determinismHash,
       hash: smoke.hash,
       userAgent: smoke.userAgent,
       version: browser.version()
@@ -162,7 +160,6 @@ async function main() {
       version: smoke.version,
       userAgent: smoke.userAgent,
       hash: smoke.hash,
-      determinismHash: smoke.determinismHash,
       checks: smoke.checks
     };
 

@@ -1,25 +1,25 @@
 # Contributing
 
-## Workflow
-- Pull requests only.
-- Use small, logically scoped changes.
-- Merge via squash.
+Open an issue for significant API or behavior changes before investing in an implementation. Bug fixes and focused maintenance changes can go directly to a pull request.
 
-## Local verification
-Run before opening a pull request:
-- `npm ci`
-- `npm run lint`
-- `npm run typecheck`
-- `npm run build`
-- `npm test`
-- `npm run eval:ci`
+Keep runtime code dependency-free, ESM-only, and portable across Node.js, Deno, Bun, and browsers. Public breaking changes are acceptable before 1.0 when they remove ambiguity or runtime defects; do not add compatibility layers for obsolete contracts.
 
-## Constraints
-- Runtime dependencies must remain empty.
-- ESM only.
-- Runtime code under `src/` must not import Node builtins.
-- Evaluation artifacts are written under `reports/` and not committed.
+## Verify a change
 
-## Maintainer docs
+Install Node.js 20 or newer, npm 10 or newer, and Deno:
 
-- [Maintainer index](./docs/maintainers/index.md)
+```sh
+npm ci
+npm run check:fast
+```
+
+Parser, serializer, package, or cross-runtime changes also require Bun and Chromium:
+
+```sh
+npx playwright install chromium
+npm run qualification:ci
+```
+
+Add the smallest regression test that fails without the change. Behavior tests belong in `test/`, compile-only API contracts in `type-tests/`, and fixed inputs in `test/fixtures/`. Do not commit generated `dist/` or `reports/` files.
+
+See [development and releases](./docs/development.md) for the source layout and qualification suites.
