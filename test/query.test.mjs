@@ -38,12 +38,17 @@ test("query layer finds elements by qName and attribute", () => {
 });
 
 test("query layer filters by namespace and lists text nodes deterministically", () => {
-  const document = parseXml(SAMPLE);
+  const document = parseXml(`${SAMPLE.slice(0, -7)}tail</root>`);
 
   const namespaced = listElementsByNamespace(document, "urn:n", "item");
   assert.deepEqual(namespaced.map((entry) => entry.nodeId), [4]);
 
   const textNodes = listTextNodes(document);
-  assert.deepEqual(textNodes.map((entry) => entry.kind), ["text"]);
-  assert.deepEqual(textNodes.map((entry) => entry.value), ["txt"]);
+  assert.deepEqual(textNodes.map((entry) => entry.kind), ["text", "text"]);
+  assert.deepEqual(textNodes.map((entry) => entry.value), ["txt", "tail"]);
+});
+
+test("text traversal preserves mixed-content document order", () => {
+  const document = parseXml("<r>a<x>b<y/>c</x>d</r>");
+  assert.deepEqual(listTextNodes(document).map((node) => node.value), ["a", "b", "c", "d"]);
 });

@@ -1,15 +1,23 @@
 {
   "$schema": "https://jsr.io/schema/config-file.v1.json",
   "name": "@ismail-elkorchi/xml-parser",
-  "version": "0.2.0",
+  "version": "0.1.1",
   "exports": {
     ".": "./jsr/mod.ts"
   },
+  "publish": {
+    "include": [
+      "src/**/*.ts",
+      "jsr/mod.ts",
+      "README.md",
+      "LICENSE"
+    ]
+  },
   "exclude": [
-    "test/**",
+    "dist/**",
+    "node_modules/**",
     "reports/**",
     "tmp/**",
-    "config/**",
-    "scripts/**"
+    "xml-parser-*.tgz"
   ]
 }

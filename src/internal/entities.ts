@@ -1,5 +1,6 @@
-import type { BudgetCheck } from "./budgets.js";
-import { isXmlCharacter, readXmlName } from "./xml-syntax.js";
+import type { BudgetCheck } from "./budgets.ts";
+import type { XmlParseErrorId } from "../contracts/types.ts";
+import { isValidXmlNcName, isXmlCharacter, readXmlName } from "./xml-syntax.ts";
 
 const PREDEFINED_ENTITIES = new Map<string, string>([
   ["lt", "<"],
@@ -10,7 +11,7 @@ const PREDEFINED_ENTITIES = new Map<string, string>([
 ]);
 
 export type ReportEntityError = (
-  parseErrorId: string,
+  parseErrorId: XmlParseErrorId,
   message: string,
   offset: number
 ) => void;
@@ -46,6 +47,13 @@ export function decodeEntities(
     }
 
     if (reference.kind === "named") {
+      if (!isValidXmlNcName(reference.body)) {
+        reportError(
+          "malformed-qualified-name",
+          `Entity reference names cannot contain a namespace separator: ${reference.body}`,
+          baseOffset + amp
+        );
+      }
       const predefined = PREDEFINED_ENTITIES.get(reference.body);
       if (predefined === undefined) {
         reportError(

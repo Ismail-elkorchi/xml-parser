@@ -1,8 +1,15 @@
-import type { BudgetCheck } from "./budgets.js";
+import type { BudgetCheck } from "./budgets.ts";
 
 export interface XmlNameRead {
   readonly value: string;
   readonly end: number;
+}
+
+export function splitXmlQName(qName: string): { readonly prefix: string | null; readonly localName: string } {
+  const separator = qName.indexOf(":");
+  return separator < 0
+    ? { prefix: null, localName: qName }
+    : { prefix: qName.slice(0, separator), localName: qName.slice(separator + 1) };
 }
 
 export function isXmlCharacter(codePoint: number): boolean {
@@ -98,12 +105,12 @@ export function readXmlName(
 export function isValidXmlQName(value: string): boolean {
   const firstColon = value.indexOf(":");
   if (firstColon < 0) {
-    return isValidNcName(value);
+    return isValidXmlNcName(value);
   }
-  if (firstColon === 0 || firstColon === value.length - 1 || value.indexOf(":", firstColon + 1) >= 0) {
+  if (firstColon === 0 || firstColon === value.length - 1 || value.includes(":", firstColon + 1)) {
     return false;
   }
-  return isValidNcName(value.slice(0, firstColon)) && isValidNcName(value.slice(firstColon + 1));
+  return isValidXmlNcName(value.slice(0, firstColon)) && isValidXmlNcName(value.slice(firstColon + 1));
 }
 
 export function normalizeXmlLineEndings(value: string): string {
@@ -114,7 +121,7 @@ export function normalizeLiteralAttributeWhitespace(value: string): string {
   return value.replace(/[\t\n\r]/g, " ");
 }
 
-function isValidNcName(value: string): boolean {
+export function isValidXmlNcName(value: string): boolean {
   if (value.length === 0) {
     return false;
   }

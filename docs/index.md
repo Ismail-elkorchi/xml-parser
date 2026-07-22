@@ -1,26 +1,16 @@
-# XML Parser Docs
+# Documentation
 
-`@ismail-elkorchi/xml-parser` provides XML parsing with namespaces, canonicalization, validation helpers, and safe DTD defaults.
+Start with the [README](../README.md) for installation and a complete first parse.
 
-## Tutorial
-- [First parse success](./tutorial/first-parse.md)
+- [Parsing, diagnostics, and budgets](./parsing.md) explains the string, byte, stream, and tokenizer APIs.
+- [Tree model and queries](./data-model.md) describes retained nodes, namespaces, source spans, and traversal helpers.
+- [Serialization and validation](./serialization-and-validation.md) covers safe serialization and qualified-name profiles.
+- [Development and releases](./development.md) explains the source layout and verification commands.
 
-## How-to
-- [Parse simple XML](./how-to/parse-simple-xml.md)
-- [Parse XML with namespaces](./how-to/parse-xml-with-namespaces.md)
-- [Configure safe DTD and XXE handling](./how-to/configure-safe-dtd-xxe-handling.md)
-- [Understand canonicalization and signature constraints](./how-to/canonicalization-and-signatures.md)
-- [Parse XML streams](./how-to/parse-xml-streams.md)
-- [Troubleshoot malformed XML](./how-to/troubleshoot-malformed-xml.md)
+## Scope
 
-## Reference
-- [API overview](./reference/api-overview.md)
-- [Options](./reference/options.md)
-- [Data model](./reference/data-model.md)
-- [Error model](./reference/error-model.md)
-- [Canonicalization and signatures](./reference/canonicalization.md)
+The package implements the XML 1.0 Fifth Edition syntax and Namespaces in XML 1.0 constraints needed by its element-and-text tree model. It has no runtime dependencies and runs without Node.js built-ins.
 
-## Explanation
-- [Design constraints](./explanation/design-constraints.md)
-- [Security posture](./explanation/security-posture.md)
-- [Performance characteristics](./explanation/performance-characteristics.md)
+DTD processing is deliberately outside the package. A document-type or entity declaration produces `disallowed-dtd`; document-defined and external entities are never resolved. The package is also not a DOM, XSD validator, canonical XML implementation, or XML Signature implementation.
+
+The relevant standards are [XML 1.0 Fifth Edition](https://www.w3.org/TR/xml/) and [Namespaces in XML 1.0 Third Edition](https://www.w3.org/TR/xml-names/).

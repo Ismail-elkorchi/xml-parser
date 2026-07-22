@@ -2,7 +2,8 @@
   "name": "@ismail-elkorchi/xml-parser",
   "version": "0.1.1",
   "type": "module",
-  "description": "XML parser with namespaces, canonicalization, validation helpers, and safe DTD defaults.",
+  "sideEffects": false,
+  "description": "Namespace-aware XML parser with bounded resources and no runtime dependencies.",
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
@@ -29,36 +30,33 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "eval:ci": "node scripts/quality/eval/run-eval.mjs --profile=ci",
-    "eval:release": "node scripts/quality/eval/run-eval.mjs --profile=release",
-    "deps:freshness": "npm outdated || true",
+    "build": "node scripts/build/build.mjs",
+    "deps:outdated": "npm outdated",
     "examples:run": "npm run build && node examples/run-all.mjs",
-    "check:fast": "npm run lint && npm run typecheck && npm test && npm run docs:required && npm run docs:quality:jsr && npm run examples:run",
-    "docs:lint:jsr": "deno doc --lint --sloppy-imports jsr/mod.ts",
-    "docs:test:jsr": "deno test --doc --no-check --sloppy-imports jsr/mod.ts",
+    "check:fast": "npm run lint && npm run typecheck && npm test && npm run typecheck:jsr && npm run docs:lint:jsr && npm run docs:test:jsr && npm run examples:run",
+    "docs:lint:jsr": "deno doc --lint jsr/mod.ts",
+    "docs:test:jsr": "deno test --doc jsr/mod.ts",
     "lint": "eslint . --max-warnings=0",
-    "oracle:xmllint": "npm run build && node scripts/dev/run-xmllint-oracle-compare.mjs",
     "smoke:all": "npm run smoke:node && npm run smoke:deno && npm run smoke:bun",
     "smoke:browser": "npm run build && node scripts/smoke/runtime-browser-smoke.mjs --report=reports/browser-smoke.json",
     "smoke:bun": "npm run build && bun scripts/smoke/runtime-smoke.mjs",
     "smoke:deno": "npm run build && deno run --allow-read scripts/smoke/runtime-smoke.mjs",
     "smoke:node": "npm run build && node scripts/smoke/runtime-smoke.mjs",
-    "mutation:pilot": "npm run build && node scripts/mutation/run-pilot.mjs --config=scripts/mutation/pilot-config.json --out=docs/maintainers/mutation-pilot-report.json",
-    "test": "npm run build && node scripts/test/run-node-tests.mjs test",
-    "test:fuzz": "npm run build && node scripts/quality/eval/check-security-adversarial.mjs",
+    "qualification:ci": "node scripts/qualification/run.mjs",
+    "qualification:release": "node scripts/qualification/run.mjs --release",
+    "test": "npm run build && node --test && npm run test:types",
+    "test:fuzz": "npm run build && node scripts/qualification/fuzz.mjs",
+    "test:package": "npm run build && node scripts/qualification/package.mjs",
+    "test:types": "tsc -p tsconfig.type-tests.json",
     "typecheck": "tsc --noEmit -p tsconfig.build.json",
-    "docs:required": "node scripts/quality/doc-required.mjs",
-    "docs:quality:jsr": "node scripts/quality/doc-jsr-quality.mjs",
-    "release:notes:dry-run": "node scripts/release/render-notes.mjs --dry-run",
-    "changelog:update:dry-run": "node scripts/release/update-changelog.mjs --dry-run"
+    "typecheck:jsr": "deno check jsr/mod.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "eslint": "10.7.0",
     "eslint-plugin-boundaries": "7.1.0",
     "playwright": "1.61.1",
-    "typescript": "5.9.3",
+    "typescript": "6.0.3",
     "typescript-eslint": "8.65.0"
   }
 }

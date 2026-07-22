@@ -1,23 +1,26 @@
-import type { BudgetCheck } from "./budgets.js";
-import { decodeEntities } from "./entities.js";
-import { XmlBudgetExceededError, createParseError } from "./parse-errors.js";
-import type { XmlParseError, XmlToken, XmlTokenAttribute } from "./types.js";
+import type { BudgetCheck } from "./budgets.ts";
+import { decodeEntities } from "./entities.ts";
+import { XmlBudgetExceededError } from "../contracts/errors.ts";
+import { createParseError } from "./parse-errors.ts";
+import type {
+  XmlParseError,
+  XmlParseErrorId,
+  XmlToken,
+  XmlTokenAttribute,
+  XmlTokenizationResult
+} from "../contracts/types.ts";
 import {
   isValidXmlQName,
   isXmlCharacter,
   isXmlWhitespace,
   normalizeLiteralAttributeWhitespace,
   readXmlName
-} from "./xml-syntax.js";
+} from "./xml-syntax.ts";
 
 interface TokenizeOptions {
   readonly maxErrors: number;
+  readonly maxAttributesPerElement: number;
   readonly checkTime: BudgetCheck;
-}
-
-export interface TokenizeResult {
-  readonly tokens: XmlToken[];
-  readonly errors: XmlParseError[];
 }
 
 interface XmlDeclarationFields {
@@ -27,12 +30,12 @@ interface XmlDeclarationFields {
   readonly standalone: "yes" | "no" | null;
 }
 
-export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeResult {
+export function tokenizeXml(source: string, options: TokenizeOptions): XmlTokenizationResult {
   const tokens: XmlToken[] = [];
   const errors: XmlParseError[] = [];
   let cursor = 0;
 
-  const pushError = (parseErrorId: string, message: string, offset: number): void => {
+  const pushError = (parseErrorId: XmlParseErrorId, message: string, offset: number): void => {
     if (errors.length >= options.maxErrors) {
       throw new XmlBudgetExceededError("maxErrors", options.maxErrors, errors.length + 1);
     }
@@ -42,7 +45,7 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
   validateXmlCharacters(source, pushError, options.checkTime);
 
   const emitText = (rawText: string, start: number, end: number): void => {
-    if (rawText.includes("]]>") ) {
+    if (rawText.includes("]]>")) {
       pushError(
         "cdata-close-in-character-data",
         "The CDATA closing delimiter is not allowed in character data",
@@ -123,6 +126,13 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
       }
 
       const rawBody = source.slice(lt + 2, end);
+      if (target.value.includes(":")) {
+        pushError(
+          "malformed-qualified-name",
+          "Processing instruction targets cannot contain a namespace separator",
+          lt + 2
+        );
+      }
       if (target.value.toLowerCase() === "xml") {
         if (target.value !== "xml") {
           pushError(
@@ -162,7 +172,7 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
       continue;
     }
 
-    if (source.startsWith("<!DOCTYPE", lt) || source.startsWith("<!ENTITY", lt)) {
+    if (isDisabledDtdDeclaration(source, lt)) {
       const end = findDeclarationEnd(source, lt + 2, options.checkTime);
       if (end < 0) {
         pushError("malformed-declaration", "Unterminated declaration", lt);
@@ -170,9 +180,6 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
       }
       const body = source.slice(lt + 2, end);
       pushError("disallowed-dtd", "DTD and entity declarations are disabled", lt);
-      if (/\bSYSTEM\b|\bPUBLIC\b/.test(body)) {
-        pushError("disallowed-external-entity", "External entities are disabled", lt);
-      }
       tokens.push({
         kind: "doctype",
         value: body,
@@ -318,6 +325,13 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
             valueStart + forbiddenLt
           );
         }
+        if (attributes.length >= options.maxAttributesPerElement) {
+          throw new XmlBudgetExceededError(
+            "maxAttributesPerElement",
+            options.maxAttributesPerElement,
+            attributes.length + 1
+          );
+        }
         attributes.push({
           qName,
           value: decodeEntities(
@@ -362,9 +376,18 @@ export function tokenizeXml(source: string, options: TokenizeOptions): TokenizeR
   return { tokens, errors };
 }
 
+function isDisabledDtdDeclaration(source: string, start: number): boolean {
+  const keywordLength = source.startsWith("<!DOCTYPE", start)
+    ? "<!DOCTYPE".length
+    : source.startsWith("<!ENTITY", start)
+      ? "<!ENTITY".length
+      : 0;
+  return keywordLength > 0 && isXmlWhitespace(source.charCodeAt(start + keywordLength));
+}
+
 function validateXmlCharacters(
   source: string,
-  reportError: (parseErrorId: string, message: string, offset: number) => void,
+  reportError: (parseErrorId: XmlParseErrorId, message: string, offset: number) => void,
   checkTime: BudgetCheck
 ): void {
   for (let offset = 0; offset < source.length;) {

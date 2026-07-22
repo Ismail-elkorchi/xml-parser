@@ -1,19 +1,31 @@
-import { getParseErrorSpecRef, XmlBudgetExceededError, XmlDecodingError } from "./internal/parse-errors.js";
+/**
+ * Namespace-aware XML parsing, serialization, querying, and structural validation.
+ *
+ * @example Parse a document and reject malformed input.
+ * ```ts
+ * import { parseXml } from "@ismail-elkorchi/xml-parser";
+ *
+ * const document = parseXml("<feed><entry id=\"1\"/></feed>");
+ * if (document.errors.length > 0) throw new Error("Invalid XML");
+ * console.log(document.root?.qName);
+ * ```
+ *
+ * @module
+ */
+
+import {
+  getParseErrorSpecRef,
+  XmlBudgetExceededError,
+  XmlConfigurationError,
+  XmlDecodingError
+} from "./contracts/errors.ts";
 import {
   parseXmlBytesSource,
   parseXmlSource,
   parseXmlStreamSource,
   tokenizeXmlSource
-} from "./internal/parser.js";
-import { serializeXmlDocument } from "./internal/serializer.js";
-import {
-  canonicalizeXml,
-  computeCanonicalSha256,
-  signCanonicalXml,
-  verifyCanonicalSha256,
-  verifyCanonicalXmlSignature
-} from "./public/canonical.js";
-import { createXmlReplayContract, verifyXmlReplayContract } from "./public/diagnostics.js";
+} from "./internal/parser.ts";
+import { serializeXmlDocument } from "./internal/serializer.ts";
 import {
   findFirstElementByQName,
   iterateElements,
@@ -21,58 +33,64 @@ import {
   listElementsByNamespace,
   listElementsByQName,
   listTextNodes
-} from "./public/query.js";
-import { validateXmlProfile } from "./public/schema.js";
-import type { XmlDocument, XmlNode, XmlParseOptions, XmlToken } from "./public/types.js";
+} from "./public/query.ts";
+import { validateXmlProfile } from "./public/validation.ts";
+import type {
+  XmlDocument,
+  XmlNode,
+  XmlParseOptions,
+  XmlTokenizeOptions,
+  XmlTokenizationResult
+} from "./contracts/types.ts";
 
 export type {
   XmlAttribute,
   XmlDocument,
   XmlElementNode,
   XmlNode,
+  XmlNodeKind,
   XmlParseBudgets,
   XmlParseError,
+  XmlParseErrorId,
   XmlParseOptions,
-  XmlReplayContract,
-  XmlReplayEvent,
-  XmlReplayInput,
-  XmlReplayOptions,
-  XmlReplayVerificationResult,
   XmlSpan,
   XmlTextNode,
   XmlToken,
-  XmlTokenAttribute
-} from "./public/types.js";
-export type { XmlValidationIssue, XmlValidationProfile, XmlValidationResult } from "./public/schema.js";
-export type { CanonicalInput } from "./public/canonical.js";
+  XmlTokenAttribute,
+  XmlTokenizeBudgets,
+  XmlTokenizeOptions,
+  XmlTokenizationResult
+} from "./contracts/types.ts";
+export type {
+  XmlValidationIssue,
+  XmlValidationProfile,
+  XmlValidationResult
+} from "./public/validation.ts";
+export type { XmlConfigurationErrorCode } from "./contracts/errors.ts";
 
-export { XmlBudgetExceededError, XmlDecodingError, getParseErrorSpecRef };
+export { XmlBudgetExceededError, XmlConfigurationError, XmlDecodingError, getParseErrorSpecRef };
 export {
   findFirstElementByQName,
   iterateElements,
   listElementsByAttribute,
   listElementsByNamespace,
   listElementsByQName,
-  canonicalizeXml,
-  computeCanonicalSha256,
-  createXmlReplayContract,
   listTextNodes,
-  signCanonicalXml,
-  validateXmlProfile,
-  verifyCanonicalSha256,
-  verifyCanonicalXmlSignature,
-  verifyXmlReplayContract
+  validateXmlProfile
 };
 
 /**
- * Parses a UTF-16 JavaScript string into a deterministic XML document tree.
+ * Parses XML text into a namespace-aware tree and diagnostic list.
+ *
+ * The returned tree may contain recovery output when `errors` is non-empty.
+ * Applications handling untrusted input should reject such documents.
  *
  * @param input XML source text.
- * @param options Parse budget controls.
+ * @param options Resource limits for parsing.
  * @example
  * ```ts
- * const doc = parseXml("<root><item id=\"1\"/></root>");
- * console.log(doc.root?.qName);
+ * const document = parseXml("<root><item/></root>");
+ * console.log(document.errors.length, document.root?.qName);
  * ```
  */
 export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocument {
@@ -80,15 +98,14 @@ export function parseXml(input: string, options: XmlParseOptions = {}): XmlDocum
 }
 
 /**
- * Parses UTF-8/byte-oriented XML input into a deterministic XML document tree.
+ * Decodes UTF-8 bytes and parses the resulting XML document.
  *
- * @param input Raw XML bytes.
- * @param options Parse budget controls.
+ * @param input UTF-8 XML bytes.
+ * @param options Resource limits for decoding and parsing.
  * @example
  * ```ts
- * const bytes = new TextEncoder().encode("<root><item/></root>");
- * const doc = parseXmlBytes(bytes);
- * console.log(doc.kind);
+ * const bytes = new TextEncoder().encode("<root/>");
+ * console.log(parseXmlBytes(bytes).root?.qName);
  * ```
  */
 export function parseXmlBytes(input: Uint8Array, options: XmlParseOptions = {}): XmlDocument {
@@ -96,23 +113,23 @@ export function parseXmlBytes(input: Uint8Array, options: XmlParseOptions = {}):
 }
 
 /**
- * Parses a byte stream into a deterministic XML document tree.
+ * Reads a stream of UTF-8 bytes and parses it as XML.
+ *
+ * The reader is cancelled on failure and its lock is always released. Parsing
+ * starts after the complete byte stream has been decoded.
  *
  * @param stream Stream of UTF-8 XML bytes.
- * @param options Parse budget controls.
+ * @param options Resource limits for reading, decoding, and parsing.
  * @example
  * ```ts
+ * const bytes = new TextEncoder().encode("<root/>");
  * const stream = new ReadableStream({
- *   start(controller) {
- *     controller.enqueue(new TextEncoder().encode("<root/>"));
- *     controller.close();
- *   }
+ *   start(controller) { controller.enqueue(bytes); controller.close(); }
  * });
- * const doc = await parseXmlStream(stream);
- * console.log(doc.root?.qName);
+ * console.log((await parseXmlStream(stream)).root?.qName);
  * ```
  */
-export async function parseXmlStream(
+export function parseXmlStream(
   stream: ReadableStream<Uint8Array>,
   options: XmlParseOptions = {}
 ): Promise<XmlDocument> {
@@ -120,13 +137,12 @@ export async function parseXmlStream(
 }
 
 /**
- * Serializes an XML document or node back to XML text.
+ * Serializes a document or node as well-formed XML.
  *
- * @param input Full document or a node subtree.
+ * @param input Parsed document or caller-constructed node tree.
  * @example
  * ```ts
- * const doc = parseXml("<root><item/></root>");
- * console.log(serializeXml(doc));
+ * console.log(serializeXml(parseXml("<root><item/></root>")));
  * ```
  */
 export function serializeXml(input: XmlDocument | XmlNode): string {
@@ -134,16 +150,16 @@ export function serializeXml(input: XmlDocument | XmlNode): string {
 }
 
 /**
- * Tokenizes XML text using parser-compatible token rules.
+ * Tokenizes XML text and returns both lexical tokens and diagnostics.
  *
  * @param input XML source text.
- * @param options Parse options used to derive token budget limits.
+ * @param options Resource limits for tokenization.
  * @example
  * ```ts
- * const tokens = tokenizeXml("<root/>");
- * console.log(tokens.length > 0);
+ * const result = tokenizeXml("<root/>");
+ * console.log(result.tokens[0]?.kind, result.errors.length);
  * ```
  */
-export function tokenizeXml(input: string, options: XmlParseOptions = {}): XmlToken[] {
+export function tokenizeXml(input: string, options: XmlTokenizeOptions = {}): XmlTokenizationResult {
   return tokenizeXmlSource(input, options);
 }

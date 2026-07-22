@@ -1,30 +1,11 @@
 # Releasing
 
-## Publish model
+1. Set the same version in `package.json`, `package-lock.json`, and `jsr.json`.
+2. Move the relevant `CHANGELOG.md` entries under a dated version heading.
+3. Run `npm ci` and `npm run qualification:release` locally.
+4. Merge the release change to `main` after hosted checks pass.
+5. Tag that exact `main` commit as `vX.Y.Z` and create the GitHub release for the tag.
 
-Publishing is performed via GitHub Actions OIDC (tokenless):
-- npm Trusted Publishing
-- JSR OIDC publishing
+The release event is the only publishing path. Its workflow revalidates tag and manifest parity, verifies that the tag is on `main`, qualifies the checked-out tag, dry-runs JSR through Deno, and publishes to JSR and npm using GitHub OIDC. The npm command publishes the exact tarball produced after qualification.
 
-Use `.github/workflows/publish.yml` for release-driven publish and `.github/workflows/publish-manual.yml` for manual dry-runs or controlled publish runs.
-
-## Required checks before publish
-
-```bash
-npm ci
-npm run check:fast
-npm run docs:lint:jsr
-npm run docs:test:jsr
-npm run examples:run
-npm pack --dry-run
-node scripts/quality/doc-required.mjs
-```
-
-## Release notes and changelog
-
-```bash
-node scripts/release/render-notes.mjs --dry-run
-node scripts/release/update-changelog.mjs --dry-run
-```
-
-Reference details: `docs/maintainers/releasing.md`.
+Do not rerun a failed release by moving an existing tag. Diagnose the registry state, fix the workflow or source on a new commit, and use a new version when either registry already contains the original version.

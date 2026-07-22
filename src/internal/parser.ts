@@ -3,43 +3,51 @@ import {
   createTimeBudgetCheck,
   monotonicNow,
   resolveBudgets,
+  resolveTokenizeBudgets,
   type BudgetCheck,
   utf8ByteLength
-} from "./budgets.js";
-import { stableHash } from "./hash.js";
-import { XmlDecodingError, createParseError } from "./parse-errors.js";
-import { tokenizeXml } from "./tokenizer.js";
+} from "./budgets.ts";
+import { assertReadableByteStream, assertString, assertUint8Array } from "./arguments.ts";
+import { XmlDecodingError } from "../contracts/errors.ts";
+import { createParseError } from "./parse-errors.ts";
+import { tokenizeXml } from "./tokenizer.ts";
 import type {
   XmlAttribute,
   XmlDocument,
-  XmlElementNode,
   XmlParseBudgets,
   XmlParseError,
+  XmlParseErrorId,
   XmlParseOptions,
-  XmlSpan,
   XmlTextNode,
-  XmlToken
-} from "./types.js";
-import { containsNonXmlWhitespace, normalizeXmlLineEndings } from "./xml-syntax.js";
+  XmlTokenizeOptions,
+  XmlTokenizationResult
+} from "../contracts/types.ts";
+import { containsNonXmlWhitespace, normalizeXmlLineEndings, splitXmlQName } from "./xml-syntax.ts";
 
 const XML_NS = "http://www.w3.org/XML/1998/namespace";
 const XMLNS_NS = "http://www.w3.org/2000/xmlns/";
 
-function splitQName(qName: string): { readonly prefix: string | null; readonly localName: string } {
-  const index = qName.indexOf(":");
-  if (index < 0) {
-    return {
-      prefix: null,
-      localName: qName
-    };
-  }
-  return {
-    prefix: qName.slice(0, index),
-    localName: qName.slice(index + 1)
-  };
+interface MutableXmlSpan {
+  start: number;
+  end: number;
+  origin: "input" | "inferred";
 }
 
-function inputSpan(start: number, end: number): XmlSpan {
+interface MutableXmlElementNode {
+  readonly kind: "element";
+  readonly nodeId: number;
+  readonly qName: string;
+  readonly localName: string;
+  readonly prefix: string | null;
+  readonly namespaceURI: string | null;
+  readonly attributes: XmlAttribute[];
+  readonly children: (MutableXmlElementNode | XmlTextNode)[];
+  readonly span: MutableXmlSpan;
+  readonly startTagSpan: MutableXmlSpan;
+  endTagSpan: MutableXmlSpan | null;
+}
+
+function inputSpan(start: number, end: number): MutableXmlSpan {
   return {
     start,
     end,
@@ -62,13 +70,13 @@ function resolveNamespace(context: Map<string, string>, prefix: string): string 
 function buildDocumentFromTokens(
   source: string,
   documentSource: string | null,
-  tokenizeResult: { readonly tokens: XmlToken[]; readonly errors: XmlParseError[] },
+  tokenizeResult: XmlTokenizationResult,
   budgets: XmlParseBudgets,
   checkTime: BudgetCheck
 ): XmlDocument {
   const errors: XmlParseError[] = [...tokenizeResult.errors];
 
-  const pushError = (parseErrorId: string, message: string, offset: number): void => {
+  const pushError = (parseErrorId: XmlParseErrorId, message: string, offset: number): void => {
     if (errors.length >= budgets.maxErrors) {
       assertBudget("maxErrors", budgets.maxErrors, errors.length + 1);
     }
@@ -76,9 +84,9 @@ function buildDocumentFromTokens(
   };
 
   const contextStack: Map<string, string>[] = [createNamespaceRoot()];
-  const openStack: XmlElementNode[] = [];
+  const openStack: MutableXmlElementNode[] = [];
 
-  let root: XmlElementNode | null = null;
+  let root: MutableXmlElementNode | null = null;
   let nextNodeId = 1;
   let nodeCount = 0;
   let textBytes = 0;
@@ -102,16 +110,16 @@ function buildDocumentFromTokens(
     }
 
     if (token.kind === "text" || token.kind === "cdata") {
-      if (token.value.length === 0) {
-        continue;
-      }
-
       if (openStack.length === 0) {
-        if (containsNonXmlWhitespace(token.value)) {
+        if (token.kind === "cdata") {
+          pushError("cdata-outside-root", "CDATA sections are only allowed inside the document element", token.start);
+        } else if (containsNonXmlWhitespace(token.value)) {
           pushError("text-outside-root", "Text outside root element", token.start);
         }
         continue;
       }
+
+      if (token.value.length === 0) continue;
 
       textBytes += utf8ByteLength(token.value);
       assertBudget("maxTextBytes", budgets.maxTextBytes, textBytes);
@@ -128,6 +136,7 @@ function buildDocumentFromTokens(
     }
 
     if (token.kind === "start-tag") {
+      assertBudget("maxDepth", budgets.maxDepth, openStack.length + 1);
       assertBudget("maxAttributesPerElement", budgets.maxAttributesPerElement, token.attributes.length);
 
       const parentContext = contextStack[contextStack.length - 1] ?? createNamespaceRoot();
@@ -167,7 +176,7 @@ function buildDocumentFromTokens(
         }
       }
 
-      const elementName = splitQName(token.qName);
+      const elementName = splitXmlQName(token.qName);
       if (elementName.prefix === "xmlns") {
         pushError("namespace-prefix-reserved", "Element names cannot use the xmlns prefix", token.start);
       }
@@ -188,7 +197,7 @@ function buildDocumentFromTokens(
       const attributes: XmlAttribute[] = token.attributes.map((attr) => {
         const duplicateQName = attributeQNames.has(attr.qName);
         attributeQNames.add(attr.qName);
-        const split = splitQName(attr.qName);
+        const split = splitXmlQName(attr.qName);
         const namespaceDeclaration = attr.qName === "xmlns" || attr.qName.startsWith("xmlns:");
         let namespaceURI: string | null = null;
         if (namespaceDeclaration) {
@@ -227,7 +236,7 @@ function buildDocumentFromTokens(
         };
       });
 
-      const element: XmlElementNode = {
+      const element: MutableXmlElementNode = {
         kind: "element",
         nodeId: touchNode(),
         qName: token.qName,
@@ -252,47 +261,44 @@ function buildDocumentFromTokens(
       if (!token.selfClosing) {
         openStack.push(element);
         contextStack.push(localContext);
-        assertBudget("maxDepth", budgets.maxDepth, openStack.length);
       }
       continue;
     }
 
-    if (token.kind === "end-tag") {
-      if (openStack.length === 0) {
-        pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
-        continue;
-      }
+    if (openStack.length === 0) {
+      pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
+      continue;
+    }
 
-      let matchIndex = -1;
-      for (let index = openStack.length - 1; index >= 0; index -= 1) {
-        checkTime();
-        if (openStack[index]?.qName === token.qName) {
-          matchIndex = index;
-          break;
-        }
+    let matchIndex = -1;
+    for (let index = openStack.length - 1; index >= 0; index -= 1) {
+      checkTime();
+      if (openStack[index]?.qName === token.qName) {
+        matchIndex = index;
+        break;
       }
+    }
 
-      if (matchIndex < 0) {
-        pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
-        continue;
-      }
+    if (matchIndex < 0) {
+      pushError("unexpected-end-tag", `Unexpected end tag: ${token.qName}`, token.start);
+      continue;
+    }
 
-      while (openStack.length - 1 > matchIndex) {
-        const dangling = openStack.pop();
-        contextStack.pop();
-        if (dangling) {
-          pushError("mismatched-end-tag", `Mismatched end tag for ${dangling.qName}`, token.start);
-          dangling.endTagSpan = inputSpan(token.start, token.end);
-          dangling.span.end = token.end;
-        }
-      }
-
-      const node = openStack.pop();
+    while (openStack.length - 1 > matchIndex) {
+      const dangling = openStack.pop();
       contextStack.pop();
-      if (node) {
-        node.endTagSpan = inputSpan(token.start, token.end);
-        node.span.end = token.end;
+      if (dangling) {
+        pushError("mismatched-end-tag", `Mismatched end tag for ${dangling.qName}`, token.start);
+        dangling.endTagSpan = inputSpan(token.start, token.end);
+        dangling.span.end = token.end;
       }
+    }
+
+    const node = openStack.pop();
+    contextStack.pop();
+    if (node) {
+      node.endTagSpan = inputSpan(token.start, token.end);
+      node.span.end = token.end;
     }
   }
 
@@ -311,36 +317,33 @@ function buildDocumentFromTokens(
     pushError("no-root-element", "No root element found", 0);
   }
 
-  const doc: XmlDocument = {
+  return {
     kind: "document",
     source: documentSource,
     root,
-    errors,
-    tokens: tokenizeResult.tokens,
-    determinismHash: ""
+    errors
   };
-
-  checkTime();
-  doc.determinismHash = stableHash({ root, errors, tokens: doc.tokens }, checkTime);
-  checkTime();
-  return doc;
 }
 
 function parseDecodedSource(
   decodedSource: string,
   documentSource: "retain" | "discard",
   byteLength: number,
+  requireUtf8Declaration: boolean,
   budgets: XmlParseBudgets,
   checkTime: BudgetCheck
 ): XmlDocument {
   assertBudget("maxInputBytes", budgets.maxInputBytes, byteLength);
   checkTime();
-  const source = normalizeXmlLineEndings(decodedSource);
+  const withoutBom = decodedSource.startsWith("\uFEFF") ? decodedSource.slice(1) : decodedSource;
+  const source = normalizeXmlLineEndings(withoutBom);
   checkTime();
   const tokenized = tokenizeXml(source, {
     maxErrors: budgets.maxErrors,
+    maxAttributesPerElement: budgets.maxAttributesPerElement,
     checkTime
   });
+  if (requireUtf8Declaration) assertUtf8Declaration(tokenized);
   checkTime();
   return buildDocumentFromTokens(
     source,
@@ -352,42 +355,48 @@ function parseDecodedSource(
 }
 
 export function parseXmlSource(input: string, options: XmlParseOptions = {}): XmlDocument {
+  assertString(input, "input");
   const budgets = resolveBudgets(options);
   const startedAt = monotonicNow();
   const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
   const byteLength = utf8ByteLength(input);
-  return parseDecodedSource(input, "retain", byteLength, budgets, checkTime);
+  return parseDecodedSource(input, "retain", byteLength, false, budgets, checkTime);
 }
 
-export function tokenizeXmlSource(input: string, options: XmlParseOptions = {}): XmlToken[] {
-  const budgets = resolveBudgets(options);
+export function tokenizeXmlSource(input: string, options: XmlTokenizeOptions = {}): XmlTokenizationResult {
+  assertString(input, "input");
+  const budgets = resolveTokenizeBudgets(options);
   const startedAt = monotonicNow();
   const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
   assertBudget("maxInputBytes", budgets.maxInputBytes, utf8ByteLength(input));
   checkTime();
-  const source = normalizeXmlLineEndings(input);
+  const withoutBom = input.startsWith("\uFEFF") ? input.slice(1) : input;
+  const source = normalizeXmlLineEndings(withoutBom);
   const result = tokenizeXml(source, {
     maxErrors: budgets.maxErrors,
+    maxAttributesPerElement: budgets.maxAttributesPerElement,
     checkTime
   });
   checkTime();
-  return result.tokens;
+  return result;
 }
 
 export function parseXmlBytesSource(input: Uint8Array, options: XmlParseOptions = {}): XmlDocument {
+  assertUint8Array(input, "input");
   const budgets = resolveBudgets(options);
   const startedAt = monotonicNow();
   const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
   assertBudget("maxInputBytes", budgets.maxInputBytes, input.byteLength);
   const source = decodeUtf8(new TextDecoder("utf-8", { fatal: true }), input, false);
   checkTime();
-  return parseDecodedSource(source, "retain", input.byteLength, budgets, checkTime);
+  return parseDecodedSource(source, "retain", input.byteLength, true, budgets, checkTime);
 }
 
 export async function parseXmlStreamSource(
   stream: ReadableStream<Uint8Array>,
   options: XmlParseOptions = {}
 ): Promise<XmlDocument> {
+  assertReadableByteStream(stream, "stream");
   const budgets = resolveBudgets(options);
   const startedAt = monotonicNow();
   const checkTime = createTimeBudgetCheck(budgets.maxTimeMs, startedAt);
@@ -405,6 +414,7 @@ export async function parseXmlStreamSource(
         break;
       }
 
+      assertUint8Array(value, "stream chunk");
       consumedBytes += value.byteLength;
       assertBudget("maxInputBytes", budgets.maxInputBytes, consumedBytes);
       assertBudget("maxStreamBytes", budgets.maxStreamBytes, consumedBytes);
@@ -413,7 +423,7 @@ export async function parseXmlStreamSource(
 
     chunks.push(decodeUtf8(decoder, undefined, false));
     checkTime();
-    return parseDecodedSource(chunks.join(""), "discard", consumedBytes, budgets, checkTime);
+    return parseDecodedSource(chunks.join(""), "discard", consumedBytes, true, budgets, checkTime);
   } catch (error) {
     try {
       await reader.cancel(error);
@@ -434,6 +444,18 @@ function decodeUtf8(
   try {
     return input === undefined ? decoder.decode() : decoder.decode(input, { stream });
   } catch {
-    throw new XmlDecodingError();
+    throw new XmlDecodingError("INVALID_UTF8", "utf-8");
+  }
+}
+
+function assertUtf8Declaration(tokenization: XmlTokenizationResult): void {
+  const declaration = tokenization.tokens.find((token) => token.kind === "xml-declaration" && token.start === 0);
+  if (declaration?.kind !== "xml-declaration" || declaration.encoding === null) return;
+  if (tokenization.errors.some((error) => error.parseErrorId === "malformed-xml-declaration" && error.offset === 0)) {
+    return;
+  }
+  const normalized = declaration.encoding.toLowerCase();
+  if (normalized !== "utf-8" && normalized !== "utf8") {
+    throw new XmlDecodingError("UNSUPPORTED_XML_ENCODING", declaration.encoding);
   }
 }

@@ -1,5 +1,11 @@
-import { XmlBudgetExceededError } from "./parse-errors.js";
-import type { XmlParseBudgets, XmlParseOptions } from "./types.js";
+import { XmlBudgetExceededError } from "../contracts/errors.ts";
+import { assertRecord, invalid } from "./arguments.ts";
+import type {
+  XmlParseBudgets,
+  XmlParseOptions,
+  XmlTokenizeBudgets,
+  XmlTokenizeOptions
+} from "../contracts/types.ts";
 
 export type BudgetCheck = () => void;
 
@@ -14,21 +20,40 @@ export const DEFAULT_BUDGETS: XmlParseBudgets = {
   maxTimeMs: 2_000
 };
 
-export function resolveBudgets(options: XmlParseOptions): XmlParseBudgets {
-  const overrides = options.budgets ?? {};
-  for (const [name, value] of Object.entries(overrides)) {
-    if (!Object.hasOwn(DEFAULT_BUDGETS, name)) {
-      throw new TypeError(`Unknown XML parser budget: ${name}`);
-    }
-    if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
-      throw new RangeError(`budgets.${name} must be a non-negative finite integer`);
-    }
-  }
+export const DEFAULT_TOKENIZE_BUDGETS: XmlTokenizeBudgets = {
+  maxInputBytes: DEFAULT_BUDGETS.maxInputBytes,
+  maxAttributesPerElement: DEFAULT_BUDGETS.maxAttributesPerElement,
+  maxErrors: DEFAULT_BUDGETS.maxErrors,
+  maxTimeMs: DEFAULT_BUDGETS.maxTimeMs
+};
 
-  return {
-    ...DEFAULT_BUDGETS,
-    ...overrides
-  };
+export function resolveBudgets(options: XmlParseOptions): XmlParseBudgets {
+  return { ...DEFAULT_BUDGETS, ...resolveOverrides(options, DEFAULT_BUDGETS) };
+}
+
+export function resolveTokenizeBudgets(options: XmlTokenizeOptions): XmlTokenizeBudgets {
+  return { ...DEFAULT_TOKENIZE_BUDGETS, ...resolveOverrides(options, DEFAULT_TOKENIZE_BUDGETS) };
+}
+
+function resolveOverrides(
+  options: unknown,
+  defaults: object
+): Record<string, number> {
+  const rawOptions: unknown = options;
+  assertRecord(rawOptions, "INVALID_ARGUMENT", "options");
+  const rawBudgets = rawOptions["budgets"] ?? {};
+  assertRecord(rawBudgets, "INVALID_BUDGET", "options.budgets");
+  const overrides: Record<string, number> = {};
+  for (const [name, value] of Object.entries(rawBudgets)) {
+    if (!Object.hasOwn(defaults, name)) {
+      invalid("INVALID_BUDGET", `options.budgets.${name}`, "is not a recognized budget");
+    }
+    if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+      invalid("INVALID_BUDGET", `options.budgets.${name}`, "must be a non-negative finite integer");
+    }
+    overrides[name] = value;
+  }
+  return overrides;
 }
 
 export function assertBudget(

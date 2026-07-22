@@ -22,8 +22,7 @@
     {"id":"c020-text-outside-root","xml":"prefix<root/>","expectedRoot":"root","expectedErrorIds":["text-outside-root"]},
     {"id":"c021-no-root","xml":"<!--only comment-->","expectedRoot":null,"expectedErrorIds":["no-root-element"]},
     {"id":"c022-doctype-disallowed","xml":"<!DOCTYPE root><root/>","expectedRoot":"root","expectedErrorIds":["disallowed-dtd"]},
-    {"id":"c023-doctype-disallowed-repeat","xml":"<!DOCTYPE root><root/>","expectedRoot":"root","expectedErrorIds":["disallowed-dtd"]},
-    {"id":"c024-external-entity-disallowed","xml":"<!DOCTYPE root SYSTEM \"https://x.test\"><root/>","expectedRoot":"root","expectedErrorIds":["disallowed-dtd","disallowed-external-entity"]},
+    {"id":"c024-external-entity-disallowed","xml":"<!DOCTYPE root SYSTEM \"https://x.test\"><root/>","expectedRoot":"root","expectedErrorIds":["disallowed-dtd"]},
     {"id":"c025-processing-instruction","xml":"<?app run?><root/>","expectedRoot":"root","expectedErrorIds":[]},
     {"id":"c026-xml-declaration-not-at-start","xml":"<r/><?xml version=\"1.0\"?><a/>","expectedRoot":"r","expectedErrorIds":["xml-declaration-not-at-start","multiple-root-elements"]},
     {"id":"c027-malformed-comment","xml":"<root><!-- bad</root>","expectedRoot":"root","expectedErrorIds":["malformed-comment","unclosed-tag"]},
@@ -50,6 +49,11 @@
     {"id":"c048-malformed-non-xml-whitespace","xml":" <r/>","expectedRoot":"r","expectedErrorIds":["text-outside-root"]},
     {"id":"c049-processing-instruction-valid","xml":"<?app run?><r/>","expectedRoot":"r","expectedErrorIds":[]},
     {"id":"c050-malformed-xml-declaration","xml":"<?xml?><r/>","expectedRoot":"r","expectedErrorIds":["malformed-xml-declaration"]},
-    {"id":"c051-malformed-expanded-attribute-duplicate","xml":"<r xmlns:a=\"urn:x\" xmlns:b=\"urn:x\" a:id=\"1\" b:id=\"2\"/>","expectedRoot":"r","expectedErrorIds":["duplicate-expanded-attribute"]}
+    {"id":"c051-malformed-expanded-attribute-duplicate","xml":"<r xmlns:a=\"urn:x\" xmlns:b=\"urn:x\" a:id=\"1\" b:id=\"2\"/>","expectedRoot":"r","expectedErrorIds":["duplicate-expanded-attribute"]},
+    {"id":"c052-empty-cdata-outside-root","xml":"<![CDATA[]]><r/>","expectedRoot":"r","expectedErrorIds":["cdata-outside-root"]},
+    {"id":"c053-processing-instruction-colon","xml":"<?a:b?><r/>","expectedRoot":"r","expectedErrorIds":["malformed-qualified-name"]},
+    {"id":"c054-leading-bom","xml":"﻿<r/>","expectedRoot":"r","expectedErrorIds":[]},
+    {"id":"c055-doctype-prefix-is-not-declaration","xml":"<!DOCTYPEroot><r/>","expectedRoot":"r","expectedErrorIds":["malformed-tag"]},
+    {"id":"c056-entity-name-colon","xml":"<r>&a:b;</r>","expectedRoot":"r","expectedErrorIds":["malformed-qualified-name","undefined-entity"]}
   ]
 }

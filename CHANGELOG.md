@@ -1,29 +1,21 @@
 # Changelog
 
-All notable changes are documented in this file.
-
 ## Unreleased
 
-- Prepare version 0.2.0 with unconditional XML 1.0 well-formedness checks,
-  Unicode names, line-ending normalization, and namespace constraint fixes.
-- Enforce error and end-to-end time budgets across tokenization, entity decoding,
-  tree construction, and deterministic hashing.
-- Reject malformed UTF-8 with a structured decoding error and release stream
-  readers on every success and failure path.
-- Remove the permissive `strict` option and align JSR declarations with the
-  package's real public types; version replay contracts as `xml-replay-v2` for
-  the changed parse-option semantics.
-- Repair recursive test discovery, current Deno documentation output handling,
-  and vulnerable development tooling.
+- Enforce XML 1.0 character, name, declaration, entity-reference, line-ending, and namespace constraints across all parse paths.
+- Apply input, stream, node, depth, attribute, text, diagnostic, and elapsed-time budgets throughout decoding, tokenization, tree construction, and recovery.
+- Return tokenizer diagnostics with tokens; use typed configuration, decoding, and budget errors for fatal API failures.
+- Validate caller-constructed trees before serialization and preserve referenced XML whitespace characters across serialization round trips.
+- Remove permissive parsing modes, misleading canonicalization/signature and replay APIs, the parse-result hash, and their dead tests and tooling.
+- Expose one readonly TypeScript contract to npm and JSR, validate packed runtime and declaration consumers, and keep runtime dependencies at zero.
+- Replace the generated paperwork and duplicated evaluation scripts with focused behavior, type, conformance, fuzz, browser, cross-runtime, performance, oracle, and package checks.
+- Refresh development dependencies and pinned GitHub Actions, disable Dependabot, and restrict publishing to fully qualified GitHub release tags on `main`.
+- Rewrite the README, documentation, examples, contribution guidance, security policy, and release instructions around the actual package behavior.
 
 ## [0.1.1] - 2026-03-04
-- Add OIDC `publish.yml` workflow for npm Trusted Publishing and JSR publish on release events.
-- Add publish manifest evidence and deterministic tag/version parity checks before publish.
-- Documentation front-door and docs-map upgrade.
-- Added runnable examples (`npm run examples:run`).
-- Added `jsr.json` baseline and validated dry-run path.
-- Reorganized operational docs/config/check scripts into stable public paths.
+
+- Add npm and JSR package metadata, OIDC publishing, runnable examples, and the initial documentation structure.
 
 ## [0.1.0] - 2026-03-04
-- First public release of `@ismail-elkorchi/xml-parser`.
-- npm + JSR package metadata, docs surface, and release automation hardened for deterministic publishing.
+
+- Publish the first package release.
